@@ -1,3 +1,4 @@
+import { read, utils } from "xlsx";
 import { useEffect, useState } from "react";
 import "./Inventario.css";
 
@@ -14,6 +15,47 @@ export default function Inventario() {
   const [cantidad, setCantidad] = useState("");
   const [imagen, setImagen] = useState("");
   const [preview, setPreview] = useState(null);
+
+  // === Cargar desde Excel ===
+  const handleFileUpload = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (evt) => {
+      const bstr = evt.target.result;
+      const wb = read(bstr, { type: "binary" });
+      const wsname = wb.SheetNames[0];
+      const ws = wb.Sheets[wsname];
+      const data = utils.sheet_to_json(ws);
+
+      if (!usuario) {
+        alert("Debes iniciar sesión para cargar productos");
+        return;
+      }
+
+      const nuevosProductos = data.map((item, index) => ({
+        id: Date.now() + index,
+        nombre: item.nombre || item.Nombre || "Sin nombre",
+        descripcion: item.descripcion || item.Descripcion || "",
+        marca: item.marca || item.Marca || "",
+        tipoHerramienta: item.tipoHerramienta || item.TipoHerramienta || "Manual",
+        tamaño: item.tamaño || item.Tamaño || "Estándar",
+        cantidad: Number(item.cantidad || item.Cantidad || 0),
+        precio: Number(item.precio || item.Precio || 0),
+        total: (Number(item.cantidad || 0) * Number(item.precio || 0)).toFixed(2),
+        imagen: item.imagen || item.Imagen || "https://via.placeholder.com/200x200?text=Sin+Imagen",
+        vendedor: usuario.nombre || usuario.email,
+        vendedorId: usuario.id,
+        tipoEmpresa: usuario.tipoEmpresa || null,
+        creadoEn: new Date().toISOString(),
+      }));
+
+      setProductos((prev) => [...nuevosProductos, ...prev]);
+      alert(`Se han cargado ${nuevosProductos.length} productos exitosamente.`);
+    };
+    reader.readAsBinaryString(file);
+  };
 
   // === Cargar usuario ===
   useEffect(() => {
@@ -125,6 +167,18 @@ export default function Inventario() {
           <p>Vendedor: {usuario.nombre}</p>
           {usuario.tipoEmpresa && <p>Tipo de empresa: {usuario.tipoEmpresa}</p>}
         </header>
+
+        {/* === CARGA MASIVA === */}
+        <section className="form-section" style={{ marginBottom: "2rem", border: "2px dashed #ccc", padding: "2rem" }}>
+          <h2>📂 Carga Masiva (Excel)</h2>
+          <p>Sube un archivo Excel (.xlsx, .xls) con las columnas: nombre, descripcion, marca, precio, cantidad, tipoHerramienta, tamaño, imagen.</p>
+          <input
+            type="file"
+            accept=".xlsx, .xls"
+            onChange={handleFileUpload}
+            style={{ marginTop: "1rem" }}
+          />
+        </section>
 
         {/* === FORMULARIO === */}
         <section className="form-section">
