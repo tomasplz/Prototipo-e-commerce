@@ -43,48 +43,84 @@ export default async function handler(req, res) {
   }
 
   // Modelo configurable via variable de entorno
-  // Opciones gratuitas: 
-  // - mistralai/mistral-7b-instruct:free
-  // - google/gemma-2-9b-it:free  
-  // - meta-llama/llama-3.2-3b-instruct:free
-  // - qwen/qwen-2-7b-instruct:free
   const model = process.env.OPENROUTER_MODEL || 'mistralai/mistral-7b-instruct:free';
 
-  const { mensaje, productos } = req.body || {};
+  const { mensaje, historial, productos, ubicacionUsuario } = req.body || {};
   
   if (!mensaje) {
     return res.status(400).json({ error: 'Falta el mensaje', message: 'Por favor escribe un mensaje' });
   }
 
-  // Construir contexto con los productos disponibles
-  const productosResumen = (productos || []).slice(0, 20).map(p => 
-    `- ${p.nombre}: $${p.precio} en ${p.vendedor?.nombre || 'Tienda'}`
+  // Construir contexto con los productos disponibles (ahora incluye distancias)
+  const productosOrdenados = (productos || [])
+    .sort((a, b) => (a.distanciaMetros || 999999) - (b.distanciaMetros || 999999))
+    .slice(0, 25);
+  
+  const productosResumen = productosOrdenados.map(p => 
+    `- ${p.nombre}: $${p.precio?.toLocaleString?.('es-CL') || p.precio} en ${p.tienda} (${p.distancia})`
   ).join('\n') || 'No hay productos disponibles';
 
-  const systemPrompt = `Eres un asistente de MiTienda, un marketplace de ferreterías en La Serena, Chile.
-Tu objetivo es ayudar a los clientes a encontrar productos de ferretería.
+  // Agrupar por producto para mostrar comparativas
+  const productosAgrupados = {};
+  productosOrdenados.forEach(p => {
+    const key = p.nombre.toLowerCase();
+    if (!productosAgrupados[key]) {
+      productosAgrupados[key] = [];
+    }
+    productosAgrupados[key].push(p);
+  });
 
-PRODUCTOS DISPONIBLES:
+  const comparativaResumen = Object.entries(productosAgrupados)
+    .filter(([_, ofertas]) => ofertas.length > 1)
+    .map(([nombre, ofertas]) => {
+      const masBarato = ofertas.sort((a,b) => a.precio - b.precio)[0];
+      const masCercano = ofertas.sort((a,b) => (a.distanciaMetros||999999) - (b.distanciaMetros||999999))[0];
+      return `${nombre}: Más barato en ${masBarato.tienda} ($${masBarato.precio}), Más cercano en ${masCercano.tienda} (${masCercano.distancia})`;
+    }).join('\n');
+
+  const systemPrompt = `Eres un asistente de MiTienda, un marketplace de ferreterías en La Serena y Coquimbo, Chile.
+Tu objetivo es ayudar a los clientes a encontrar productos de ferretería al mejor precio y más cercano.
+
+UBICACIÓN DEL USUARIO: ${ubicacionUsuario?.ciudad || 'La Serena'} (lat: ${ubicacionUsuario?.lat || 'desconocida'}, lng: ${ubicacionUsuario?.lng || 'desconocida'})
+
+PRODUCTOS DISPONIBLES (ordenados por cercanía):
 ${productosResumen}
 
-INSTRUCCIONES:
-- Responde en español chileno, amigable y breve
-- Si preguntan por un producto, menciona opciones disponibles con precios
-- Sugiere el más barato o el más cercano según lo que pidan
-- Mantén respuestas cortas (máximo 2-3 oraciones)`;
+COMPARATIVAS DE PRECIOS:
+${comparativaResumen || 'Sin comparativas disponibles'}
+
+INSTRUCCIONES IMPORTANTES:
+- Responde en español chileno, amigable y breve (máximo 3-4 oraciones)
+- SIEMPRE menciona precios y distancias cuando hables de productos
+- Si preguntan por un producto, di cuál es el MÁS BARATO y cuál es el MÁS CERCANO
+- Si el usuario da su dirección, recuerda que ya tienes sus coordenadas y las distancias calculadas
+- Cuando pregunten por varios productos, sugiere la tienda donde puedan comprar más cosas juntas
+- Sé proactivo: si alguien busca algo, menciona alternativas similares
+- NUNCA pidas código postal o dirección, ya tienes la ubicación del usuario`;
+
+  // Construir mensajes con historial
+  const mensajesIA = [
+    { role: 'system', content: systemPrompt }
+  ];
+  
+  // Agregar historial de conversación si existe
+  if (historial && historial.length > 0) {
+    mensajesIA.push(...historial);
+  }
+  
+  // Agregar mensaje actual
+  mensajesIA.push({ role: 'user', content: mensaje });
 
   try {
     const requestBody = JSON.stringify({
       model: model,
-      messages: [
-        { role: 'system', content: systemPrompt },
-        { role: 'user', content: mensaje }
-      ],
-      max_tokens: 200,
+      messages: mensajesIA,
+      max_tokens: 300,
       temperature: 0.7
     });
 
     console.log('Usando modelo:', model);
+    console.log('Mensajes en conversación:', mensajesIA.length);
 
     const options = {
       hostname: 'openrouter.ai',

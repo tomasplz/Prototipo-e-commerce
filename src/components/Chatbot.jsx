@@ -180,6 +180,35 @@ export default function Chatbot() {
   // Llamar a la API de IA (OpenRouter via Vercel Serverless)
   const llamarIA = async (mensajeUsuario) => {
     const productos = JSON.parse(localStorage.getItem("productos")) || [];
+    const usuarios = JSON.parse(localStorage.getItem("usuarios")) || [];
+    const ubicacion = getUbicacionUsuario();
+    
+    // Preparar historial de conversación (últimos 10 mensajes)
+    const historial = messages
+      .filter(m => !m.showSuggestions)
+      .slice(-10)
+      .map(m => ({
+        role: m.from === "user" ? "user" : "assistant",
+        content: m.text
+      }));
+    
+    // Enriquecer productos con distancias y nombre de tienda
+    const productosConDistancia = productos.slice(0, 40).map(p => {
+      const tienda = usuarios.find(u => u.id === p.vendedorId || u.id === p.vendedor?.id);
+      let distancia = null;
+      if (tienda && tienda.lat && tienda.lng) {
+        distancia = calcularDistancia(ubicacion.lat, ubicacion.lng, tienda.lat, tienda.lng);
+      }
+      return {
+        nombre: p.nombre,
+        precio: p.precio,
+        tienda: tienda?.nombre || p.vendedor?.nombre || 'Tienda',
+        direccion: tienda?.direccion || '',
+        distancia: distancia ? (distancia >= 1000 ? `${(distancia/1000).toFixed(1)} km` : `${Math.round(distancia)} m`) : 'desconocida',
+        distanciaMetros: distancia || 999999,
+        stock: p.cantidad
+      };
+    });
 
     try {
       const response = await fetch("/api/chat", {
@@ -187,7 +216,13 @@ export default function Chatbot() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ 
           mensaje: mensajeUsuario,
-          productos: productos.slice(0, 30) // Enviar resumen de productos
+          historial: historial,
+          productos: productosConDistancia,
+          ubicacionUsuario: {
+            lat: ubicacion.lat,
+            lng: ubicacion.lng,
+            ciudad: "La Serena" // Por defecto
+          }
         })
       });
 
