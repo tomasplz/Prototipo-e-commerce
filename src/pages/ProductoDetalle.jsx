@@ -102,13 +102,19 @@ export default function ProductoDetalle() {
     setProducto(found);
 
     if (found) {
-      // Buscar el mismo producto (por SKU o nombre) en todas las ferreterías
-      const productosSimilares = productos.filter(
-        (p) => p.sku === found.sku || p.nombre.toLowerCase() === found.nombre.toLowerCase()
-      );
+      // Buscar el mismo producto (por SKU) en todas las ferreterías
+      // Si no hay SKU, usar nombre exacto
+      const productosSimilares = productos.filter((p) => {
+        if (found.sku && p.sku) {
+          return p.sku === found.sku;
+        }
+        return p.nombre.toLowerCase().trim() === found.nombre.toLowerCase().trim();
+      });
 
       // Construir lista de ferreterías con precios REALES
+      // Agrupar por vendedor para evitar duplicados de la misma tienda
       const ferresConPrecio = [];
+      const vendedoresVistos = new Set();
 
       productosSimilares.forEach((prod) => {
         // Buscar info de la ferretería
@@ -117,6 +123,12 @@ export default function ProductoDetalle() {
         );
 
         if (ferreInfo && ferreInfo.lat && ferreInfo.lng) {
+          // Evitar duplicados de la misma ferretería
+          if (vendedoresVistos.has(ferreInfo.id)) {
+            return;
+          }
+          vendedoresVistos.add(ferreInfo.id);
+          
           const distancia = calcularDistancia(
             ubicacionUsuario.lat,
             ubicacionUsuario.lng,

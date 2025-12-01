@@ -40,22 +40,32 @@ export default function Inventario() {
         return;
       }
 
-      const nuevosProductos = data.map((item, index) => ({
-        id: Date.now() + index,
-        nombre: item.nombre || item.Nombre || "Sin nombre",
-        descripcion: item.descripcion || item.Descripcion || "",
-        marca: item.marca || item.Marca || "",
-        tipoHerramienta: item.tipoHerramienta || item.TipoHerramienta || "Manual",
-        tamaño: item.tamaño || item.Tamaño || "Estándar",
-        cantidad: Number(item.cantidad || item.Cantidad || 0),
-        precio: Number(item.precio || item.Precio || 0),
-        total: (Number(item.cantidad || 0) * Number(item.precio || 0)).toFixed(2),
-        imagen: item.imagen || item.Imagen || "https://via.placeholder.com/200x200?text=Sin+Imagen",
-        vendedor: usuario.nombre || usuario.email,
-        vendedorId: usuario.id,
-        tipoEmpresa: usuario.tipoEmpresa || null,
-        creadoEn: new Date().toISOString(),
-      }));
+      const nuevosProductos = data.map((item, index) => {
+        const nombre = item.nombre || item.Nombre || "Sin nombre";
+        // Auto-generar SKU si no existe: NOMBRE-MARCA (sin espacios, mayúsculas)
+        const skuAuto = (nombre + '-' + (item.marca || item.Marca || 'GENERICO'))
+          .toUpperCase()
+          .replace(/[^A-Z0-9]/g, '-')
+          .replace(/-+/g, '-');
+        
+        return {
+          id: Date.now() + index,
+          sku: item.sku || item.SKU || skuAuto,
+          nombre: nombre,
+          descripcion: item.descripcion || item.Descripcion || "",
+          marca: item.marca || item.Marca || "",
+          tipoHerramienta: item.tipoHerramienta || item.TipoHerramienta || "Manual",
+          tamaño: item.tamaño || item.Tamaño || "Estándar",
+          cantidad: Number(item.cantidad || item.Cantidad || 0),
+          precio: Number(item.precio || item.Precio || 0),
+          total: (Number(item.cantidad || 0) * Number(item.precio || 0)).toFixed(2),
+          imagen: item.imagen || item.Imagen || "https://via.placeholder.com/200x200?text=Sin+Imagen",
+          vendedor: usuario.nombre || usuario.email,
+          vendedorId: usuario.id,
+          tipoEmpresa: usuario.tipoEmpresa || null,
+          creadoEn: new Date().toISOString(),
+        };
+      });
 
       setProductos((prev) => [...nuevosProductos, ...prev]);
       alert(`Se han cargado ${nuevosProductos.length} productos exitosamente.`);
@@ -154,8 +164,15 @@ export default function Inventario() {
       setEditandoId(null);
     } else {
       // Modo agregar: crear nuevo producto
+      // Auto-generar SKU basado en nombre y marca
+      const skuAuto = (nombre.trim() + '-' + marca.trim())
+        .toUpperCase()
+        .replace(/[^A-Z0-9]/g, '-')
+        .replace(/-+/g, '-');
+      
       const nuevoProducto = {
         id: Date.now(),
+        sku: skuAuto,
         nombre: nombre.trim(),
         descripcion: descripcion.trim(),
         marca: marca.trim(),
@@ -256,6 +273,9 @@ export default function Inventario() {
                 required
               />
             </div>
+            <small style={{ color: '#666', marginBottom: '8px', display: 'block' }}>
+              💡 El SKU se generará automáticamente basado en el nombre y marca
+            </small>
 
             <div className="fila">
               <select
