@@ -1,11 +1,24 @@
 // API Route para Vercel - Oculta la API key del frontend
 module.exports = async function handler(req, res) {
+  // Headers CORS
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+
+  // Manejar preflight OPTIONS
+  if (req.method === 'OPTIONS') {
+    return res.status(200).end();
+  }
+
   // Solo permitir POST
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const { messages, productos } = req.body;
+  const { mensaje, productos } = req.body;
+  
+  // Convertir mensaje simple a formato messages
+  const messages = [{ role: 'user', content: mensaje }];
 
   // Construir contexto con los productos disponibles
   const productosResumen = productos?.slice(0, 30).map(p => 
@@ -26,17 +39,23 @@ INSTRUCCIONES:
 - Puedes recomendar ir a "Ver ferreterías" para comparar precios
 - Mantén respuestas cortas (máximo 2-3 oraciones)`;
 
+  // Verificar que tenemos la API key
+  if (!process.env.OPENROUTER_API_KEY) {
+    console.error('OPENROUTER_API_KEY no está configurada');
+    return res.status(500).json({ error: 'API key no configurada', message: 'Error de configuración del servidor' });
+  }
+
   try {
     const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${process.env.OPENROUTER_API_KEY}`,
-        'HTTP-Referer': process.env.VERCEL_URL || 'http://localhost:5173',
+        'HTTP-Referer': 'https://prototipo-e-commerce-seven.vercel.app',
         'X-Title': 'MiTienda Chatbot'
       },
       body: JSON.stringify({
-        model: 'meta-llama/llama-3.2-3b-instruct:free', // Modelo gratuito
+        model: 'meta-llama/llama-3.2-3b-instruct:free',
         messages: [
           { role: 'system', content: systemPrompt },
           ...messages
@@ -46,18 +65,27 @@ INSTRUCCIONES:
       })
     });
 
+    const responseText = await response.text();
+    
     if (!response.ok) {
-      const error = await response.text();
-      console.error('OpenRouter error:', error);
-      return res.status(500).json({ error: 'Error al consultar el modelo' });
+      console.error('OpenRouter error:', response.status, responseText);
+      return res.status(500).json({ 
+        error: 'Error al consultar el modelo',
+        details: responseText,
+        message: 'Hubo un problema al conectar con el asistente'
+      });
     }
 
-    const data = await response.json();
+    const data = JSON.parse(responseText);
     const assistantMessage = data.choices?.[0]?.message?.content || 'Lo siento, no pude procesar tu consulta.';
 
     return res.status(200).json({ message: assistantMessage });
   } catch (error) {
-    console.error('Error:', error);
-    return res.status(500).json({ error: 'Error interno del servidor' });
+    console.error('Error:', error.message);
+    return res.status(500).json({ 
+      error: 'Error interno del servidor',
+      details: error.message,
+      message: 'Error al procesar tu consulta'
+    });
   }
 }

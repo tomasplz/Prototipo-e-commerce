@@ -180,30 +180,21 @@ export default function Chatbot() {
   // Llamar a la API de IA (OpenRouter via Vercel Serverless)
   const llamarIA = async (mensajeUsuario) => {
     const productos = JSON.parse(localStorage.getItem("productos")) || [];
-    
-    // Preparar historial de mensajes para el contexto
-    const historial = messages
-      .filter(m => !m.showSuggestions)
-      .slice(-6) // Últimos 6 mensajes para contexto
-      .map(m => ({
-        role: m.from === "user" ? "user" : "assistant",
-        content: m.text
-      }));
-    
-    historial.push({ role: "user", content: mensajeUsuario });
 
     try {
       const response = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ 
-          messages: historial,
+          mensaje: mensajeUsuario,
           productos: productos.slice(0, 30) // Enviar resumen de productos
         })
       });
 
       if (!response.ok) {
-        throw new Error("Error en la respuesta");
+        const errorData = await response.json().catch(() => ({}));
+        console.error("Error llamando a IA:", errorData);
+        throw new Error(errorData.message || "Error en la respuesta");
       }
 
       const data = await response.json();
