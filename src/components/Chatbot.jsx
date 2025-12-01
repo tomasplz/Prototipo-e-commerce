@@ -24,8 +24,9 @@ export default function Chatbot() {
   ]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [ubicacionInfo, setUbicacionInfo] = useState({ esReal: false, lat: null, lng: null });
   const messagesEndRef = useRef(null);
+  const ubicacionRef = useRef({ esReal: null, lat: null, lng: null });
+  const mensajeUbicacionEnviado = useRef(false);
   const navigate = useNavigate();
 
   // Obtener ubicación del usuario y su estado (real o de prueba)
@@ -65,55 +66,70 @@ export default function Chatbot() {
   useEffect(() => {
     const checkUbicacion = () => {
       const ubicacion = getUbicacionUsuario();
-      const cambioUbicacion = 
-        ubicacion.lat !== ubicacionInfo.lat || 
-        ubicacion.lng !== ubicacionInfo.lng ||
-        ubicacion.esReal !== ubicacionInfo.esReal;
+      const prevUbicacion = ubicacionRef.current;
       
-      if (cambioUbicacion && ubicacionInfo.lat !== null && isOpen) {
-        // Hubo un cambio de ubicación después del inicio y el chat está abierto
-        if (ubicacion.esReal && !ubicacionInfo.esReal) {
-          // Cambió de prueba a real
+      // Solo procesar si hay un cambio real Y el chat está abierto
+      const cambioTipo = prevUbicacion.esReal !== null && ubicacion.esReal !== prevUbicacion.esReal;
+      const cambioCoords = prevUbicacion.lat !== null && 
+                          ubicacion.esReal && prevUbicacion.esReal &&
+                          (Math.abs(ubicacion.lat - prevUbicacion.lat) > 0.001 || 
+                           Math.abs(ubicacion.lng - prevUbicacion.lng) > 0.001);
+      
+      if (isOpen && !mensajeUbicacionEnviado.current) {
+        if (cambioTipo) {
+          mensajeUbicacionEnviado.current = true;
+          
+          if (ubicacion.esReal && !prevUbicacion.esReal) {
+            // Cambió de prueba a real
+            setMessages(prev => [...prev, {
+              from: "bot",
+              text: "📍 ¡Perfecto! Ahora tengo tu ubicación real. Las distancias serán exactas. ¿Qué producto buscas?"
+            }]);
+          } else if (!ubicacion.esReal && prevUbicacion.esReal) {
+            // Cambió de real a prueba
+            setMessages(prev => [...prev, {
+              from: "bot",
+              text: "📍 Ubicación desactivada. Usaré un punto de referencia en La Serena (distancias aproximadas)."
+            }]);
+          }
+          
+          // Reset después de un tiempo para permitir futuros cambios
+          setTimeout(() => { mensajeUbicacionEnviado.current = false; }, 3000);
+        } else if (cambioCoords) {
+          mensajeUbicacionEnviado.current = true;
           setMessages(prev => [...prev, {
             from: "bot",
-            text: "📍 ¡Perfecto! Ahora tengo tu ubicación real. Las distancias que te muestre serán exactas desde donde estás. ¿Qué producto te gustaría buscar?"
+            text: "📍 Ubicación actualizada. Las distancias se recalcularon."
           }]);
-        } else if (!ubicacion.esReal && ubicacionInfo.esReal) {
-          // Cambió de real a prueba
-          setMessages(prev => [...prev, {
-            from: "bot",
-            text: "📍 Veo que desactivaste tu ubicación. Usaré un punto de referencia en La Serena, pero las distancias serán aproximadas. Puedes volver a activar tu ubicación cuando quieras."
-          }]);
-        } else if (ubicacion.esReal && ubicacionInfo.esReal && 
-                   (Math.abs(ubicacion.lat - ubicacionInfo.lat) > 0.001 || 
-                    Math.abs(ubicacion.lng - ubicacionInfo.lng) > 0.001)) {
-          // Se movió significativamente (>100m aprox)
-          setMessages(prev => [...prev, {
-            from: "bot",
-            text: "📍 ¡Detecté que cambiaste de ubicación! Las distancias a las ferreterías se han actualizado automáticamente."
-          }]);
+          setTimeout(() => { mensajeUbicacionEnviado.current = false; }, 3000);
         }
       }
       
-      setUbicacionInfo({
+      // Actualizar ref
+      ubicacionRef.current = {
         esReal: ubicacion.esReal,
         lat: ubicacion.lat,
         lng: ubicacion.lng
-      });
+      };
     };
 
-    // Verificar al inicio
-    checkUbicacion();
+    // Verificar al inicio (sin enviar mensaje)
+    const ubicacionInicial = getUbicacionUsuario();
+    ubicacionRef.current = {
+      esReal: ubicacionInicial.esReal,
+      lat: ubicacionInicial.lat,
+      lng: ubicacionInicial.lng
+    };
 
     // Escuchar el evento personalizado de cambio de ubicación
     const handleUbicacionCambiada = () => {
-      setTimeout(checkUbicacion, 100); // Pequeño delay para que localStorage se actualice
+      setTimeout(checkUbicacion, 200);
     };
 
     // Escuchar cambios en localStorage (otras pestañas)
     const handleStorageChange = (e) => {
       if (e.key === "ubicacionUsuario" || e.key === "tipoUbicacion") {
-        checkUbicacion();
+        setTimeout(checkUbicacion, 200);
       }
     };
     
@@ -124,7 +140,7 @@ export default function Chatbot() {
       window.removeEventListener("ubicacionCambiada", handleUbicacionCambiada);
       window.removeEventListener("storage", handleStorageChange);
     };
-  }, [ubicacionInfo, isOpen]);
+  }, [isOpen]);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });

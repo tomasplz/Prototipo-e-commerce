@@ -53,9 +53,6 @@ export default async function handler(req, res) {
 
   // Determinar estado de la ubicación
   const esUbicacionReal = ubicacionUsuario?.esReal === true;
-  const estadoUbicacion = esUbicacionReal 
-    ? `UBICACIÓN REAL ACTIVADA - El usuario compartió su ubicación GPS real en ${ubicacionUsuario?.ciudad || 'La Serena'}`
-    : `⚠️ UBICACIÓN DE PRUEBA - El usuario NO ha activado su ubicación real. Las distancias son aproximadas desde un punto de referencia en La Serena. DEBES sugerirle que active "Usar mi ubicación" para obtener distancias precisas.`;
 
   // Construir contexto con los productos disponibles (ahora incluye distancias)
   const productosOrdenados = (productos || [])
@@ -63,7 +60,7 @@ export default async function handler(req, res) {
     .slice(0, 25);
   
   const productosResumen = productosOrdenados.map(p => 
-    `- ${p.nombre}: $${p.precio?.toLocaleString?.('es-CL') || p.precio} en ${p.tienda} (${p.distancia}${!esUbicacionReal ? ' - aproximado' : ''})`
+    `- ${p.nombre}: $${p.precio?.toLocaleString?.('es-CL') || p.precio} en ${p.tienda} (${p.distancia})`
   ).join('\n') || 'No hay productos disponibles';
 
   // Agrupar por producto para mostrar comparativas
@@ -84,10 +81,20 @@ export default async function handler(req, res) {
       return `${nombre}: Más barato en ${masBarato.tienda} ($${masBarato.precio}), Más cercano en ${masCercano.tienda} (${masCercano.distancia})`;
     }).join('\n');
 
+  // Contar mensajes del historial para saber si ya mencionamos la ubicación
+  const cantidadMensajes = (historial || []).length;
+  const yaMencionoUbicacion = cantidadMensajes > 2;
+
+  const instruccionUbicacion = !esUbicacionReal 
+    ? (yaMencionoUbicacion 
+        ? '- El usuario NO tiene ubicación real. Ya le mencionaste esto antes, NO lo repitas a menos que pregunte específicamente sobre ubicación o distancias.'
+        : '- El usuario NO tiene ubicación real activada. Menciona UNA VEZ que puede activar "Usar mi ubicación" para distancias exactas, pero no insistas.')
+    : '- El usuario TIENE ubicación real activada. Las distancias son exactas.';
+
   const systemPrompt = `Eres un asistente de MiTienda, un marketplace de ferreterías en La Serena y Coquimbo, Chile.
 Tu objetivo es ayudar a los clientes a encontrar productos de ferretería al mejor precio y más cercano.
 
-ESTADO DE UBICACIÓN: ${estadoUbicacion}
+ESTADO DE UBICACIÓN: ${esUbicacionReal ? 'UBICACIÓN REAL ACTIVADA ✓' : 'Ubicación de prueba (aproximada)'}
 
 PRODUCTOS DISPONIBLES (ordenados por cercanía):
 ${productosResumen}
@@ -95,15 +102,15 @@ ${productosResumen}
 COMPARATIVAS DE PRECIOS:
 ${comparativaResumen || 'Sin comparativas disponibles'}
 
-INSTRUCCIONES IMPORTANTES:
-- Responde en español chileno, amigable y breve (máximo 3-4 oraciones)
-- SIEMPRE menciona precios y distancias cuando hables de productos
-- Si preguntan por un producto, di cuál es el MÁS BARATO y cuál es el MÁS CERCANO
-${!esUbicacionReal ? '- IMPORTANTE: Como el usuario NO tiene ubicación real activada, SIEMPRE recuérdale que puede activar "Usar mi ubicación" para obtener distancias exactas' : ''}
+INSTRUCCIONES:
+- Responde en español chileno, amigable y breve (2-3 oraciones máximo)
+- Menciona precios y distancias cuando hables de productos específicos
+- Si preguntan por un producto, di cuál es el MÁS BARATO y cuál el MÁS CERCANO
+${instruccionUbicacion}
+- NO repitas información que ya dijiste en mensajes anteriores
+- Si el usuario dice "si" o responde brevemente, continúa la conversación naturalmente
 - Cuando pregunten por varios productos, sugiere la tienda donde puedan comprar más cosas juntas
-- Sé proactivo: si alguien busca algo, menciona alternativas similares
-- Si preguntan sobre su ubicación o distancias, explica si es real o aproximada
-- NUNCA pidas dirección manualmente, solo sugiere activar la ubicación GPS en la app`;
+- NUNCA pidas dirección manualmente`;
 
   // Construir mensajes con historial
   const mensajesIA = [
@@ -122,7 +129,7 @@ ${!esUbicacionReal ? '- IMPORTANTE: Como el usuario NO tiene ubicación real act
     const requestBody = JSON.stringify({
       model: model,
       messages: mensajesIA,
-      max_tokens: 300,
+      max_tokens: 250,
       temperature: 0.7
     });
 
