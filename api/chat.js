@@ -81,36 +81,44 @@ export default async function handler(req, res) {
       return `${nombre}: Más barato en ${masBarato.tienda} ($${masBarato.precio}), Más cercano en ${masCercano.tienda} (${masCercano.distancia})`;
     }).join('\n');
 
+  // Extraer lista de tiendas únicas
+  const tiendasUnicas = [...new Set(productosOrdenados.map(p => p.tienda))].join(', ');
+
   // Contar mensajes del historial para saber si ya mencionamos la ubicación
   const cantidadMensajes = (historial || []).length;
   const yaMencionoUbicacion = cantidadMensajes > 2;
 
   const instruccionUbicacion = !esUbicacionReal 
     ? (yaMencionoUbicacion 
-        ? '- El usuario NO tiene ubicación real. Ya le mencionaste esto antes, NO lo repitas a menos que pregunte específicamente sobre ubicación o distancias.'
-        : '- El usuario NO tiene ubicación real activada. Menciona UNA VEZ que puede activar "Usar mi ubicación" para distancias exactas, pero no insistas.')
-    : '- El usuario TIENE ubicación real activada. Las distancias son exactas.';
+        ? '- El usuario NO tiene ubicación real. Ya se lo mencionaste, NO lo repitas.'
+        : '- El usuario NO tiene ubicación real. Menciona UNA VEZ que puede activar "Usar mi ubicación".')
+    : '- El usuario TIENE ubicación real activada ✓';
 
-  const systemPrompt = `Eres un asistente de MiTienda, un marketplace de ferreterías en La Serena y Coquimbo, Chile.
-Tu objetivo es ayudar a los clientes a encontrar productos de ferretería al mejor precio y más cercano.
+  const systemPrompt = `Eres el asistente virtual de MiTienda, una PLATAFORMA/MARKETPLACE (similar a MercadoLibre o AliExpress) que conecta MÚLTIPLES FERRETERÍAS locales en La Serena y Coquimbo, Chile.
 
-ESTADO DE UBICACIÓN: ${esUbicacionReal ? 'UBICACIÓN REAL ACTIVADA ✓' : 'Ubicación de prueba (aproximada)'}
+IMPORTANTE - ENTIENDE ESTO:
+- MiTienda NO es una tienda única, es una PLATAFORMA que agrupa varias ferreterías
+- Las ferreterías asociadas son: ${tiendasUnicas}
+- Cada producto puede estar en DIFERENTES tiendas a DIFERENTES precios
+- Tu trabajo es ayudar al usuario a encontrar el MEJOR PRECIO y la tienda MÁS CERCANA
 
-PRODUCTOS DISPONIBLES (ordenados por cercanía):
+ESTADO DE UBICACIÓN: ${esUbicacionReal ? 'UBICACIÓN REAL ACTIVADA ✓' : 'Ubicación aproximada'}
+
+PRODUCTOS EN LA PLATAFORMA (de diferentes ferreterías):
 ${productosResumen}
 
-COMPARATIVAS DE PRECIOS:
+COMPARATIVAS DE PRECIOS ENTRE TIENDAS:
 ${comparativaResumen || 'Sin comparativas disponibles'}
 
 INSTRUCCIONES:
-- Responde en español chileno, amigable y breve (2-3 oraciones máximo)
-- Menciona precios y distancias cuando hables de productos específicos
-- Si preguntan por un producto, di cuál es el MÁS BARATO y cuál el MÁS CERCANO
+- Responde en español chileno, amigable y breve (2-3 oraciones)
+- Cuando menciones un producto, SIEMPRE di EN QUÉ TIENDA está y a qué precio
+- Si un producto está en varias tiendas, compara: "En X está a $Y, pero en Z está más barato a $W"
+- Ayuda al usuario a decidir entre el más barato vs el más cercano
 ${instruccionUbicacion}
-- NO repitas información que ya dijiste en mensajes anteriores
-- Si el usuario dice "si" o responde brevemente, continúa la conversación naturalmente
-- Cuando pregunten por varios productos, sugiere la tienda donde puedan comprar más cosas juntas
-- NUNCA pidas dirección manualmente`;
+- NO repitas lo que ya dijiste
+- Si dicen "si" o responden corto, continúa naturalmente
+- NUNCA digas "nuestra tienda" - di "en la plataforma" o menciona la ferretería específica`;
 
   // Construir mensajes con historial
   const mensajesIA = [

@@ -348,18 +348,17 @@ export default function Chatbot() {
     }
   };
 
-  const handleSend = async () => {
-    if (!input.trim() || isLoading) return;
+  // Función para enviar mensaje (usada por input y botones de sugerencias)
+  const enviarMensaje = async (texto) => {
+    if (!texto.trim() || isLoading) return;
 
-    const userMsg = { from: "user", text: input };
+    const userMsg = { from: "user", text: texto };
     setMessages((prev) => [...prev, userMsg]);
-    const textoUsuario = input;
-    setInput("");
 
     // Si está habilitada la IA, intentar usarla
     if (USE_AI) {
       setIsLoading(true);
-      const respuestaIA = await llamarIA(textoUsuario);
+      const respuestaIA = await llamarIA(texto);
       setIsLoading(false);
 
       if (respuestaIA) {
@@ -369,7 +368,7 @@ export default function Chatbot() {
     }
 
     // Fallback: procesamiento local
-    const respuesta = procesarMensaje(textoUsuario);
+    const respuesta = procesarMensaje(texto);
     
     setTimeout(() => {
       if (typeof respuesta === "string") {
@@ -381,6 +380,18 @@ export default function Chatbot() {
         ]);
       }
     }, 500);
+  };
+
+  const handleSend = async () => {
+    if (!input.trim() || isLoading) return;
+    const texto = input;
+    setInput("");
+    await enviarMensaje(texto);
+  };
+
+  const handleSugerenciaClick = async (query) => {
+    if (isLoading) return;
+    await enviarMensaje(query);
   };
 
   const handleProductClick = (productoId) => {
@@ -496,39 +507,26 @@ export default function Chatbot() {
                   {msg.text}
                 </div>
                 {/* Botones de sugerencias rápidas */}
-                {msg.showSuggestions && (
+                {msg.showSuggestions && !isLoading && (
                   <div style={{ marginTop: 10, display: "flex", flexWrap: "wrap", gap: 6 }}>
                     {SUGERENCIAS_RAPIDAS.map((sug, i) => (
                       <button
                         key={i}
-                        onClick={() => {
-                          setInput(sug.query);
-                          setTimeout(() => {
-                            const userMsg = { from: "user", text: sug.query };
-                            setMessages((prev) => [...prev, userMsg]);
-                            const respuesta = procesarMensaje(sug.query);
-                            setTimeout(() => {
-                              if (typeof respuesta === "string") {
-                                setMessages((prev) => [...prev, { from: "bot", text: respuesta }]);
-                              } else {
-                                setMessages((prev) => [...prev, { from: "bot", text: respuesta.text, productos: respuesta.productos }]);
-                              }
-                            }, 300);
-                            setInput("");
-                          }, 100);
-                        }}
+                        onClick={() => handleSugerenciaClick(sug.query)}
+                        disabled={isLoading}
                         style={{
                           background: "#fff7ed",
                           border: "1px solid #fed7aa",
                           borderRadius: 20,
                           padding: "6px 12px",
                           fontSize: 12,
-                          cursor: "pointer",
+                          cursor: isLoading ? "not-allowed" : "pointer",
                           color: "#c2410c",
                           fontWeight: 500,
                           transition: "all 0.2s",
+                          opacity: isLoading ? 0.5 : 1,
                         }}
-                        onMouseEnter={(e) => { e.target.style.background = "#ffedd5"; }}
+                        onMouseEnter={(e) => { if (!isLoading) e.target.style.background = "#ffedd5"; }}
                         onMouseLeave={(e) => { e.target.style.background = "#fff7ed"; }}
                       >
                         {sug.texto}
