@@ -127,7 +127,7 @@ export default function Navbar({ usuario, setUsuario }) {
       <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
         <Link to="/" style={{ textDecoration: "none", color: "#fff", fontWeight: 800, fontSize: 18, display: "flex", alignItems: "center", gap: 8 }}>
           <span style={{ fontSize: 24 }}>🔧</span>
-          <span>FerrePlaza</span>
+          <span>MiTienda</span>
           <span style={{ background: "#f97316", fontSize: 10, padding: "2px 6px", borderRadius: 4, marginLeft: 4 }}>La Serena</span>
         </Link>
         <nav style={{ display: "flex", gap: 12, marginLeft: 8 }}>

@@ -274,7 +274,7 @@ export default function Chatbot() {
               🔧
             </div>
             <div>
-              <strong style={{ display: "block" }}>Asistente FerrePlaza</strong>
+              <strong style={{ display: "block" }}>Asistente MiTienda</strong>
               <small style={{ opacity: 0.8 }}>Encuentra el mejor precio cerca</small>
             </div>
           </div>

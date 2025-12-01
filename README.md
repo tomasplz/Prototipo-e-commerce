@@ -1,6 +1,6 @@
-# 🔧 FerrePlaza - E-commerce para Ferreterías Locales
+# 🔧 MiTienda - E-commerce para Ferreterías Locales
 
-**FerrePlaza** es un marketplace de ferreterías locales en La Serena/Coquimbo, Chile. Permite comparar precios entre diferentes ferreterías, ver disponibilidad en tiempo real, y encontrar la tienda más cercana con el producto que necesitas.
+**MiTienda** es un marketplace de ferreterías locales en La Serena/Coquimbo, Chile. Permite comparar precios entre diferentes ferreterías, ver disponibilidad en tiempo real, y encontrar la tienda más cercana con el producto que necesitas.
 
 > 🎯 **Diferenciador vs AliExpress/Mercado Libre**: Disponibilidad local inmediata, retiro hoy mismo, y mapa interactivo para encontrar ferreterías cercanas.
 

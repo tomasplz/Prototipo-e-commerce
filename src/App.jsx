@@ -23,10 +23,13 @@ function App() {
     JSON.parse(localStorage.getItem("usuarioActual"))
   );
 
-  // ✅ Cargar productos de ejemplo si no existen
+  // ✅ Cargar productos de ejemplo si no existen o si la versión cambió
   useEffect(() => {
+    const PRODUCTOS_VERSION = "v3"; // Cambiar este número para forzar recarga de productos
+    const versionActual = localStorage.getItem("productosVersion");
     const existentes = JSON.parse(localStorage.getItem("productos")) || [];
-    if (existentes.length === 0) {
+    
+    if (existentes.length === 0 || versionActual !== PRODUCTOS_VERSION) {
       // Imágenes reales de productos (Unsplash/Pexels placeholders)
       const IMG = {
         martillo: "https://images.unsplash.com/photo-1586864387967-d02ef85d93e8?w=300&h=300&fit=crop",
@@ -114,6 +117,7 @@ function App() {
         { id: 410, sku: "MULTIMETRO-001", nombre: "Multímetro Digital", descripcion: "Medidor eléctrico profesional.", marca: "Fluke", precio: 34990, tipoHerramienta: "Medición", tamaño: "Compacto", cantidad: 15, imagen: IMG.nivel, vendedor: { nombre: "Ferretería El Maestro", id: "ferre-4" }, vendedorId: "ferre-4" },
       ];
       localStorage.setItem("productos", JSON.stringify(productosEjemplo));
+      localStorage.setItem("productosVersion", PRODUCTOS_VERSION);
     }
   }, []);
 
