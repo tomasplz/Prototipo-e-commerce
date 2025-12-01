@@ -42,6 +42,14 @@ export default async function handler(req, res) {
     });
   }
 
+  // Modelo configurable via variable de entorno
+  // Opciones gratuitas: 
+  // - mistralai/mistral-7b-instruct:free
+  // - google/gemma-2-9b-it:free  
+  // - meta-llama/llama-3.2-3b-instruct:free
+  // - qwen/qwen-2-7b-instruct:free
+  const model = process.env.OPENROUTER_MODEL || 'mistralai/mistral-7b-instruct:free';
+
   const { mensaje, productos } = req.body || {};
   
   if (!mensaje) {
@@ -67,8 +75,7 @@ INSTRUCCIONES:
 
   try {
     const requestBody = JSON.stringify({
-      // Modelo gratuito alternativo (Gemma de Google)
-      model: 'google/gemma-2-9b-it:free',
+      model: model,
       messages: [
         { role: 'system', content: systemPrompt },
         { role: 'user', content: mensaje }
@@ -76,6 +83,8 @@ INSTRUCCIONES:
       max_tokens: 200,
       temperature: 0.7
     });
+
+    console.log('Usando modelo:', model);
 
     const options = {
       hostname: 'openrouter.ai',
@@ -93,18 +102,23 @@ INSTRUCCIONES:
 
     const response = await makeRequest(options, requestBody);
     
+    // Log para debugging
+    console.log('OpenRouter response status:', response.status);
+    console.log('OpenRouter response data:', response.data.substring(0, 500));
+    
     // Manejar rate limit (429)
     if (response.status === 429) {
       console.error('Rate limit alcanzado');
       return res.status(200).json({ 
-        message: '⏳ El asistente está ocupado, intenta de nuevo en unos segundos. Mientras, puedes buscar productos usando la barra de búsqueda.'
+        message: '⏳ El asistente está ocupado, intenta de nuevo en unos segundos.'
       });
     }
     
     if (response.status !== 200) {
       console.error('OpenRouter error:', response.status, response.data);
+      // Devolver el error real para debugging
       return res.status(200).json({ 
-        message: '🔧 Hubo un problema con el asistente. Prueba buscando directamente: martillo, taladro, sierra, etc.'
+        message: `🔧 Error ${response.status}: ${response.data.substring(0, 200)}`
       });
     }
 
@@ -115,7 +129,7 @@ INSTRUCCIONES:
   } catch (error) {
     console.error('Error:', error.message);
     return res.status(200).json({ 
-      message: '🔧 Error temporal. Intenta buscar productos directamente en la barra de búsqueda.'
+      message: `🔧 Error: ${error.message}`
     });
   }
 }
