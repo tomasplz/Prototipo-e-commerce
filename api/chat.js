@@ -113,9 +113,10 @@ export default async function handler(req, res) {
     productosPorTienda[p.tienda].push(`${p.nombre} ($${p.precio})`);
   });
   
+  // Formatear catálogo por tienda con viñetas y saltos de línea para mejor legibilidad
   const resumenPorTienda = Object.entries(productosPorTienda)
-    .map(([tienda, prods]) => `${tienda}: ${prods.join(', ')}`)
-    .join('\n');
+    .map(([tienda, prods]) => `${tienda}:\n${prods.map(p => `  - ${p}`).join('\n')}`)
+    .join('\n\n');
 
   // Extraer lista de tiendas únicas
   const tiendasUnicas = [...new Set(productosOrdenados.map(p => p.tienda))];
@@ -147,20 +148,41 @@ ${resumenExclusivos}
 ═══ PRODUCTOS EN MÚLTIPLES TIENDAS (con comparativa) ═══
 ${resumenCompartidos}
 
-═══ CATÁLOGO POR TIENDA ═══
+═══ CATÁLOGO POR TIENDA (formato legible) ═══
 ${resumenPorTienda}
 
-INSTRUCCIONES:
-- Responde breve (2-3 oraciones), amigable, en español chileno
-- SIEMPRE menciona tienda + precio cuando hables de un producto
-- Para comparar: "En X está a $Y, en Z está a $W (más barato/cercano)"
+INSTRUCCIONES DE FORMATO:
+- Cuando listes productos, usa VIÑETAS y SALTOS DE LÍNEA. Un producto por línea.
+- Evita listas largas en una sola línea separada por comas. Usa líneas separadas para cada producto.
+- Si el usuario pregunta "¿qué puedo comprar en X?", responde con una lista corta (máx 8 ítems) y luego ofrece "ver más".
+
+INSTRUCCIONES DE RESPUESTA:
+- Responde breve (1-4 oraciones) y amigable, en español chileno.
+- SIEMPRE menciona tienda + precio cuando hables de un producto.
+- Para comparar: "En X está a $Y, en Z está a $W (más barato/cercano)".
 ${instruccionUbicacion}
-- Si te corrigen o dicen que te equivocaste, discúlpate y corrige basándote SOLO en los datos de arriba
+- Si te corrigen o dicen que te equivocaste, discúlpate y corrige basándote SOLO en los datos de arriba.
 - NUNCA digas "nuestra tienda" - di "en la plataforma" o el nombre de la ferretería`;
+
+  // Instrucciones adicionales para gestionar preguntas sobre cuentas/registro
+  // (se separa del prompt principal para mayor claridad en el código pero
+  // igualmente se incluye en el prompt que recibe el modelo).
+  const instruccionesCuentas = `
+
+INSTRUCCIONES SOBRE CUENTAS:
+- Si el usuario pregunta cómo iniciar sesión, responde con pasos cortos y claros: "Para iniciar sesión, ve a /login o haz clic en 'Iniciar sesión' en la barra superior. Ingresa tu correo y contraseña y presiona 'Entrar'.".
+- Si el usuario pregunta cómo crear una cuenta, responde: "Para crear una cuenta, ve a /registro, completa nombre, correo y contraseña. Luego confirma y ya podrás iniciar sesión.".
+- Ofrece enlaces relativos ("/login" y "/registro") y sugiere usar la UI.
+- NO inventes credenciales, no muestres contraseñas ni datos sensibles.
+- Si el usuario pide ayuda práctica, pregunta si quiere que abra la página de "Iniciar sesión" o "Crear cuenta" (el frontend puede mapear esta acción).
+`;
+
+  // Añadir las instrucciones de cuenta al prompt final
+  const fullSystemPrompt = systemPrompt + instruccionesCuentas;
 
   // Construir mensajes con historial
   const mensajesIA = [
-    { role: 'system', content: systemPrompt }
+    { role: 'system', content: fullSystemPrompt }
   ];
   
   // Agregar historial de conversación si existe
