@@ -24,17 +24,107 @@ export default function Chatbot() {
   ]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [ubicacionInfo, setUbicacionInfo] = useState({ esReal: false, lat: null, lng: null });
   const messagesEndRef = useRef(null);
   const navigate = useNavigate();
 
-  // Obtener ubicación del usuario
+  // Obtener ubicación del usuario y su estado (real o de prueba)
   const getUbicacionUsuario = () => {
     const usuarioActual = JSON.parse(localStorage.getItem("usuarioActual"));
-    if (usuarioActual && usuarioActual.lat && usuarioActual.lng) {
-      return { lat: usuarioActual.lat, lng: usuarioActual.lng };
+    const ubicacionGuardada = JSON.parse(localStorage.getItem("ubicacionUsuario"));
+    const tipoUbicacion = localStorage.getItem("tipoUbicacion");
+    const esReal = tipoUbicacion === "real";
+    
+    // Prioridad: ubicacionUsuario > usuarioActual > default
+    if (ubicacionGuardada && ubicacionGuardada.lat && ubicacionGuardada.lng) {
+      return { 
+        lat: ubicacionGuardada.lat, 
+        lng: ubicacionGuardada.lng,
+        esReal: esReal,
+        ciudad: esReal ? "Tu ubicación actual" : "La Serena (ubicación de prueba)"
+      };
     }
-    return UBICACION_USUARIO;
+    
+    if (usuarioActual && usuarioActual.lat && usuarioActual.lng) {
+      return { 
+        lat: usuarioActual.lat, 
+        lng: usuarioActual.lng,
+        esReal: esReal,
+        ciudad: esReal ? "Tu ubicación actual" : "La Serena (ubicación de prueba)"
+      };
+    }
+    
+    return { 
+      ...UBICACION_USUARIO, 
+      esReal: false,
+      ciudad: "La Serena (ubicación de prueba)"
+    };
   };
+
+  // Escuchar cambios de ubicación
+  useEffect(() => {
+    const checkUbicacion = () => {
+      const ubicacion = getUbicacionUsuario();
+      const cambioUbicacion = 
+        ubicacion.lat !== ubicacionInfo.lat || 
+        ubicacion.lng !== ubicacionInfo.lng ||
+        ubicacion.esReal !== ubicacionInfo.esReal;
+      
+      if (cambioUbicacion && ubicacionInfo.lat !== null && isOpen) {
+        // Hubo un cambio de ubicación después del inicio y el chat está abierto
+        if (ubicacion.esReal && !ubicacionInfo.esReal) {
+          // Cambió de prueba a real
+          setMessages(prev => [...prev, {
+            from: "bot",
+            text: "📍 ¡Perfecto! Ahora tengo tu ubicación real. Las distancias que te muestre serán exactas desde donde estás. ¿Qué producto te gustaría buscar?"
+          }]);
+        } else if (!ubicacion.esReal && ubicacionInfo.esReal) {
+          // Cambió de real a prueba
+          setMessages(prev => [...prev, {
+            from: "bot",
+            text: "📍 Veo que desactivaste tu ubicación. Usaré un punto de referencia en La Serena, pero las distancias serán aproximadas. Puedes volver a activar tu ubicación cuando quieras."
+          }]);
+        } else if (ubicacion.esReal && ubicacionInfo.esReal && 
+                   (Math.abs(ubicacion.lat - ubicacionInfo.lat) > 0.001 || 
+                    Math.abs(ubicacion.lng - ubicacionInfo.lng) > 0.001)) {
+          // Se movió significativamente (>100m aprox)
+          setMessages(prev => [...prev, {
+            from: "bot",
+            text: "📍 ¡Detecté que cambiaste de ubicación! Las distancias a las ferreterías se han actualizado automáticamente."
+          }]);
+        }
+      }
+      
+      setUbicacionInfo({
+        esReal: ubicacion.esReal,
+        lat: ubicacion.lat,
+        lng: ubicacion.lng
+      });
+    };
+
+    // Verificar al inicio
+    checkUbicacion();
+
+    // Escuchar el evento personalizado de cambio de ubicación
+    const handleUbicacionCambiada = () => {
+      setTimeout(checkUbicacion, 100); // Pequeño delay para que localStorage se actualice
+    };
+
+    // Escuchar cambios en localStorage (otras pestañas)
+    const handleStorageChange = (e) => {
+      if (e.key === "ubicacionUsuario" || e.key === "tipoUbicacion") {
+        checkUbicacion();
+      }
+    };
+    
+    window.addEventListener("ubicacionCambiada", handleUbicacionCambiada);
+    window.addEventListener("storage", handleStorageChange);
+    
+    return () => {
+      window.removeEventListener("ubicacionCambiada", handleUbicacionCambiada);
+      window.removeEventListener("storage", handleStorageChange);
+    };
+  }, [ubicacionInfo, isOpen]);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -221,7 +311,8 @@ export default function Chatbot() {
           ubicacionUsuario: {
             lat: ubicacion.lat,
             lng: ubicacion.lng,
-            ciudad: "La Serena" // Por defecto
+            esReal: ubicacion.esReal,
+            ciudad: ubicacion.ciudad || "La Serena"
           }
         })
       });

@@ -51,13 +51,19 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: 'Falta el mensaje', message: 'Por favor escribe un mensaje' });
   }
 
+  // Determinar estado de la ubicación
+  const esUbicacionReal = ubicacionUsuario?.esReal === true;
+  const estadoUbicacion = esUbicacionReal 
+    ? `UBICACIÓN REAL ACTIVADA - El usuario compartió su ubicación GPS real en ${ubicacionUsuario?.ciudad || 'La Serena'}`
+    : `⚠️ UBICACIÓN DE PRUEBA - El usuario NO ha activado su ubicación real. Las distancias son aproximadas desde un punto de referencia en La Serena. DEBES sugerirle que active "Usar mi ubicación" para obtener distancias precisas.`;
+
   // Construir contexto con los productos disponibles (ahora incluye distancias)
   const productosOrdenados = (productos || [])
     .sort((a, b) => (a.distanciaMetros || 999999) - (b.distanciaMetros || 999999))
     .slice(0, 25);
   
   const productosResumen = productosOrdenados.map(p => 
-    `- ${p.nombre}: $${p.precio?.toLocaleString?.('es-CL') || p.precio} en ${p.tienda} (${p.distancia})`
+    `- ${p.nombre}: $${p.precio?.toLocaleString?.('es-CL') || p.precio} en ${p.tienda} (${p.distancia}${!esUbicacionReal ? ' - aproximado' : ''})`
   ).join('\n') || 'No hay productos disponibles';
 
   // Agrupar por producto para mostrar comparativas
@@ -81,7 +87,7 @@ export default async function handler(req, res) {
   const systemPrompt = `Eres un asistente de MiTienda, un marketplace de ferreterías en La Serena y Coquimbo, Chile.
 Tu objetivo es ayudar a los clientes a encontrar productos de ferretería al mejor precio y más cercano.
 
-UBICACIÓN DEL USUARIO: ${ubicacionUsuario?.ciudad || 'La Serena'} (lat: ${ubicacionUsuario?.lat || 'desconocida'}, lng: ${ubicacionUsuario?.lng || 'desconocida'})
+ESTADO DE UBICACIÓN: ${estadoUbicacion}
 
 PRODUCTOS DISPONIBLES (ordenados por cercanía):
 ${productosResumen}
@@ -93,10 +99,11 @@ INSTRUCCIONES IMPORTANTES:
 - Responde en español chileno, amigable y breve (máximo 3-4 oraciones)
 - SIEMPRE menciona precios y distancias cuando hables de productos
 - Si preguntan por un producto, di cuál es el MÁS BARATO y cuál es el MÁS CERCANO
-- Si el usuario da su dirección, recuerda que ya tienes sus coordenadas y las distancias calculadas
+${!esUbicacionReal ? '- IMPORTANTE: Como el usuario NO tiene ubicación real activada, SIEMPRE recuérdale que puede activar "Usar mi ubicación" para obtener distancias exactas' : ''}
 - Cuando pregunten por varios productos, sugiere la tienda donde puedan comprar más cosas juntas
 - Sé proactivo: si alguien busca algo, menciona alternativas similares
-- NUNCA pidas código postal o dirección, ya tienes la ubicación del usuario`;
+- Si preguntan sobre su ubicación o distancias, explica si es real o aproximada
+- NUNCA pidas dirección manualmente, solo sugiere activar la ubicación GPS en la app`;
 
   // Construir mensajes con historial
   const mensajesIA = [
