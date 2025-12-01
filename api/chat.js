@@ -55,9 +55,10 @@ export default async function handler(req, res) {
   const esUbicacionReal = ubicacionUsuario?.esReal === true;
 
   // Construir contexto con los productos disponibles (ahora incluye distancias)
+  // NO truncar la lista aquí: enviar todos los productos recibidos para que
+  // el modelo pueda detectar todas las ferreterías presentes (p.ej. Don Pepe)
   const productosOrdenados = (productos || [])
-    .sort((a, b) => (a.distanciaMetros || 999999) - (b.distanciaMetros || 999999))
-    .slice(0, 30);
+    .sort((a, b) => (a.distanciaMetros || 999999) - (b.distanciaMetros || 999999));
   
   // Agrupar por nombre de producto para análisis
   const productosAgrupados = {};
