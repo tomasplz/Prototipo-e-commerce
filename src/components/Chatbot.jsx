@@ -29,6 +29,21 @@ export default function Chatbot() {
   const mensajeUbicacionEnviado = useRef(false);
   const navigate = useNavigate();
 
+  // Escuchar cambios en productos/usuarios para actualizar el contexto del chatbot
+  useEffect(() => {
+    const handleActualizacion = () => {
+      // Forzar re-render cuando se actualicen productos o usuarios
+      // (el chatbot tomará la data fresca de localStorage en cada mensaje)
+    };
+    window.addEventListener('productosActualizados', handleActualizacion);
+    window.addEventListener('usuariosActualizados', handleActualizacion);
+    
+    return () => {
+      window.removeEventListener('productosActualizados', handleActualizacion);
+      window.removeEventListener('usuariosActualizados', handleActualizacion);
+    };
+  }, []);
+
   // Obtener ubicación del usuario y su estado (real o de prueba)
   const getUbicacionUsuario = () => {
     const usuarioActual = JSON.parse(localStorage.getItem("usuarioActual"));

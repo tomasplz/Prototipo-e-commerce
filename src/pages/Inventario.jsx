@@ -15,6 +15,9 @@ export default function Inventario() {
   const [cantidad, setCantidad] = useState("");
   const [imagen, setImagen] = useState("");
   const [preview, setPreview] = useState(null);
+  
+  // Estado para edición
+  const [editandoId, setEditandoId] = useState(null);
 
   // === Cargar desde Excel ===
   const handleFileUpload = (e) => {
@@ -77,6 +80,9 @@ export default function Inventario() {
     const todos = JSON.parse(localStorage.getItem("productos")) || [];
     const otros = todos.filter((p) => p.vendedorId !== usuario.id);
     localStorage.setItem("productos", JSON.stringify([...otros, ...productos]));
+    
+    // Notificar a otros componentes (chatbot, mapa, etc.) que los productos cambiaron
+    window.dispatchEvent(new Event('productosActualizados'));
   }, [productos, usuario]);
 
   // === Manejar imagen subida ===
@@ -91,7 +97,7 @@ export default function Inventario() {
     reader.readAsDataURL(file);
   };
 
-  // === Guardar producto ===
+  // === Guardar producto (agregar o editar) ===
   const handleSubmit = (e) => {
     e.preventDefault();
 
@@ -115,24 +121,46 @@ export default function Inventario() {
 
     const total = (Number(cantidad) * Number(precio)).toFixed(2);
 
-    const nuevoProducto = {
-      id: Date.now(),
-      nombre: nombre.trim(),
-      descripcion: descripcion.trim(),
-      marca: marca.trim(),
-      tipoHerramienta,
-      tamaño: tamaño.trim(),
-      cantidad: Number(cantidad),
-      precio: Number(precio),
-      total,
-      imagen: imagen || "https://via.placeholder.com/200x200?text=Sin+Imagen",
-      vendedor: usuario.nombre || usuario.email,
-      vendedorId: usuario.id,
-      tipoEmpresa: usuario.tipoEmpresa || null,
-      creadoEn: new Date().toISOString(),
-    };
-
-    setProductos([nuevoProducto, ...productos]);
+    if (editandoId) {
+      // Modo edición: actualizar producto existente
+      const actualizados = productos.map((p) =>
+        p.id === editandoId
+          ? {
+              ...p,
+              nombre: nombre.trim(),
+              descripcion: descripcion.trim(),
+              marca: marca.trim(),
+              tipoHerramienta,
+              tamaño: tamaño.trim(),
+              cantidad: Number(cantidad),
+              precio: Number(precio),
+              total,
+              imagen: imagen || p.imagen,
+            }
+          : p
+      );
+      setProductos(actualizados);
+      setEditandoId(null);
+    } else {
+      // Modo agregar: crear nuevo producto
+      const nuevoProducto = {
+        id: Date.now(),
+        nombre: nombre.trim(),
+        descripcion: descripcion.trim(),
+        marca: marca.trim(),
+        tipoHerramienta,
+        tamaño: tamaño.trim(),
+        cantidad: Number(cantidad),
+        precio: Number(precio),
+        total,
+        imagen: imagen || "https://via.placeholder.com/200x200?text=Sin+Imagen",
+        vendedor: usuario.nombre || usuario.email,
+        vendedorId: usuario.id,
+        tipoEmpresa: usuario.tipoEmpresa || null,
+        creadoEn: new Date().toISOString(),
+      };
+      setProductos([nuevoProducto, ...productos]);
+    }
 
     // Reset form
     setNombre("");
@@ -144,6 +172,23 @@ export default function Inventario() {
     setPrecio("");
     setImagen("");
     setPreview(null);
+  };
+
+  // === Editar producto (cargar en formulario) ===
+  const handleEditar = (producto) => {
+    setEditandoId(producto.id);
+    setNombre(producto.nombre);
+    setDescripcion(producto.descripcion);
+    setMarca(producto.marca);
+    setTipoHerramienta(producto.tipoHerramienta);
+    setTamaño(producto.tamaño);
+    setCantidad(producto.cantidad.toString());
+    setPrecio(producto.precio.toString());
+    setImagen(producto.imagen);
+    setPreview(producto.imagen);
+    
+    // Scroll al formulario
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const handleEliminar = (id) => {
@@ -182,7 +227,7 @@ export default function Inventario() {
 
         {/* === FORMULARIO === */}
         <section className="form-section">
-          <h2>Agregar Herramienta</h2>
+          <h2>{editandoId ? '✏️ Editar Herramienta' : 'Agregar Herramienta'}</h2>
           <form onSubmit={handleSubmit}>
             <div className="fila">
               <input
@@ -285,7 +330,27 @@ export default function Inventario() {
               )}
             </div>
 
-            <button type="submit">Agregar</button>
+            <button type="submit">{editandoId ? 'Guardar Cambios' : 'Agregar'}</button>
+            {editandoId && (
+              <button
+                type="button"
+                onClick={() => {
+                  setEditandoId(null);
+                  setNombre('');
+                  setDescripcion('');
+                  setMarca('');
+                  setTipoHerramienta('');
+                  setTamaño('');
+                  setCantidad('');
+                  setPrecio('');
+                  setImagen('');
+                  setPreview(null);
+                }}
+                style={{ marginLeft: '10px', background: '#6b7280' }}
+              >
+                Cancelar
+              </button>
+            )}
           </form>
         </section>
 
@@ -338,6 +403,20 @@ export default function Inventario() {
                     <td>${p.precio.toFixed(2)}</td>
                     <td>${p.total}</td>
                     <td>
+                      <button
+                        onClick={() => handleEditar(p)}
+                        style={{
+                          background: '#f59e0b',
+                          color: '#fff',
+                          border: 'none',
+                          padding: '6px 12px',
+                          borderRadius: '4px',
+                          cursor: 'pointer',
+                          marginRight: '6px',
+                        }}
+                      >
+                        Editar
+                      </button>
                       <button
                         onClick={() => handleEliminar(p.id)}
                         className="eliminar"

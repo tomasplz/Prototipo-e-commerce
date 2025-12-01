@@ -76,6 +76,9 @@ export default function Registro() {
     localStorage.setItem("usuarios", JSON.stringify(usuarios));
     localStorage.setItem("usuarioActual", JSON.stringify(usuario));
 
+    // Notificar a otros componentes que se agregó un nuevo usuario/tienda
+    window.dispatchEvent(new Event('usuariosActualizados'));
+
     alert("Registro exitoso. Ahora puedes iniciar sesión.");
     navigate("/login");
   };

@@ -92,8 +92,12 @@ export default function MapaSidebar() {
 
     // Escuchar cambios de ubicación desde el toggle del Navbar
     window.addEventListener("ubicacionCambiada", cargarDatos);
+    // Escuchar cuando se registren nuevos vendedores/ferreterías
+    window.addEventListener("usuariosActualizados", cargarDatos);
+    
     return () => {
       window.removeEventListener("ubicacionCambiada", cargarDatos);
+      window.removeEventListener("usuariosActualizados", cargarDatos);
     };
   }, []);
 
