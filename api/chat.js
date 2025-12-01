@@ -1,5 +1,5 @@
 // API Route para Vercel - Oculta la API key del frontend
-export default async function handler(req, res) {
+module.exports = async function handler(req, res) {
   // Solo permitir POST
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
