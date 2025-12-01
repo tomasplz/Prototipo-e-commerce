@@ -299,7 +299,8 @@ export default function Chatbot() {
       }));
     
     // Enriquecer productos con distancias y nombre de tienda
-    const productosConDistancia = productos.slice(0, 40).map(p => {
+    // Enviar todos los productos (no truncar) para que ninguna ferretería se quede fuera
+    const productosConDistancia = productos.map(p => {
       const tienda = usuarios.find(u => u.id === p.vendedorId || u.id === p.vendedor?.id);
       let distancia = null;
       if (tienda && tienda.lat && tienda.lng) {
