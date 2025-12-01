@@ -23,10 +23,19 @@ export default function Home() {
     setProductos(stored);
     
     // Verificar si ya tenemos ubicación guardada
-    const usuarioActual = JSON.parse(localStorage.getItem("usuarioActual"));
-    if (usuarioActual?.lat && usuarioActual?.lng) {
-      setUbicacion({ lat: usuarioActual.lat, lng: usuarioActual.lng });
-      setUbicacionStatus("success");
+    const tipoUbicacion = localStorage.getItem("tipoUbicacion");
+    const ubicacionGuardada = localStorage.getItem("ubicacionUsuario");
+    
+    if (ubicacionGuardada) {
+      const parsed = JSON.parse(ubicacionGuardada);
+      setUbicacion(parsed);
+      setUbicacionStatus(tipoUbicacion === "real" ? "success" : "idle");
+    } else {
+      const usuarioActual = JSON.parse(localStorage.getItem("usuarioActual"));
+      if (usuarioActual?.lat && usuarioActual?.lng) {
+        setUbicacion({ lat: usuarioActual.lat, lng: usuarioActual.lng });
+        setUbicacionStatus("success");
+      }
     }
   }, []);
 
@@ -50,6 +59,10 @@ export default function Home() {
         
         // Guardar ubicación globalmente en localStorage
         localStorage.setItem("ubicacionUsuario", JSON.stringify(newUbicacion));
+        localStorage.setItem("tipoUbicacion", "real");
+        
+        // Notificar a otros componentes (Navbar, MapaSidebar, etc.)
+        window.dispatchEvent(new Event("ubicacionCambiada"));
         
         // También guardar en usuarioActual si hay usuario logueado
         const usuarioActual = JSON.parse(localStorage.getItem("usuarioActual"));

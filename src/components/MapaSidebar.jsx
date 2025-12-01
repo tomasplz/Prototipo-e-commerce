@@ -119,6 +119,10 @@ export default function MapaSidebar() {
 
         // Guardar ubicación en localStorage (accesible globalmente)
         localStorage.setItem("ubicacionUsuario", JSON.stringify(newUbicacion));
+        localStorage.setItem("tipoUbicacion", "real");
+        
+        // Notificar a otros componentes (Navbar, Home, ProductoDetalle)
+        window.dispatchEvent(new Event("ubicacionCambiada"));
         
         // También guardar en usuarioActual si está logueado
         const usuarioActual = JSON.parse(localStorage.getItem("usuarioActual"));

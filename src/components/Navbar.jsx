@@ -17,17 +17,30 @@ export default function Navbar({ usuario, setUsuario }) {
     setCount(stored.length);
   };
 
-  // Cargar preferencia de ubicación
+  // Cargar preferencia de ubicación y escuchar cambios
   useEffect(() => {
-    const tipoUbicacion = localStorage.getItem("tipoUbicacion");
-    if (tipoUbicacion === "real") {
-      setUbicacionFicticia(false);
-    } else {
-      // Por defecto usar ubicación ficticia
-      setUbicacionFicticia(true);
-      localStorage.setItem("tipoUbicacion", "ficticia");
-      localStorage.setItem("ubicacionUsuario", JSON.stringify(UBICACION_LA_SERENA));
-    }
+    const cargarTipoUbicacion = () => {
+      const tipoUbicacion = localStorage.getItem("tipoUbicacion");
+      if (tipoUbicacion === "real") {
+        setUbicacionFicticia(false);
+      } else {
+        setUbicacionFicticia(true);
+        // Solo setear si no existe
+        if (!localStorage.getItem("tipoUbicacion")) {
+          localStorage.setItem("tipoUbicacion", "ficticia");
+          localStorage.setItem("ubicacionUsuario", JSON.stringify(UBICACION_LA_SERENA));
+        }
+      }
+    };
+    
+    cargarTipoUbicacion();
+    
+    // Escuchar cambios de ubicación desde otros componentes (Home, MapaSidebar)
+    window.addEventListener("ubicacionCambiada", cargarTipoUbicacion);
+    
+    return () => {
+      window.removeEventListener("ubicacionCambiada", cargarTipoUbicacion);
+    };
   }, []);
 
   useEffect(() => {
