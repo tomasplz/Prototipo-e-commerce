@@ -2,6 +2,9 @@ import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { UBICACION_USUARIO, calcularDistancia } from "../data/ferreterias";
 
+// Configuración de IA (OpenRouter)
+const USE_AI = import.meta.env.VITE_USE_AI_CHAT === "true";
+
 const SUGERENCIAS_RAPIDAS = [
   { texto: "🔨 Martillos", query: "martillo" },
   { texto: "🔩 Taladros", query: "taladro" },
@@ -20,6 +23,7 @@ export default function Chatbot() {
     },
   ]);
   const [input, setInput] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef(null);
   const navigate = useNavigate();
 
@@ -173,13 +177,66 @@ export default function Chatbot() {
     return "🤔 No encontré productos con ese nombre. Prueba con términos como:\n• Martillo\n• Taladro\n• Sierra\n• Destornillador\n• Llave\n• Cinta métrica\n\nO escribe \"ayuda\" para más opciones.";
   };
 
-  const handleSend = () => {
-    if (!input.trim()) return;
+  // Llamar a la API de IA (OpenRouter via Vercel Serverless)
+  const llamarIA = async (mensajeUsuario) => {
+    const productos = JSON.parse(localStorage.getItem("productos")) || [];
+    
+    // Preparar historial de mensajes para el contexto
+    const historial = messages
+      .filter(m => !m.showSuggestions)
+      .slice(-6) // Últimos 6 mensajes para contexto
+      .map(m => ({
+        role: m.from === "user" ? "user" : "assistant",
+        content: m.text
+      }));
+    
+    historial.push({ role: "user", content: mensajeUsuario });
+
+    try {
+      const response = await fetch("/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ 
+          messages: historial,
+          productos: productos.slice(0, 30) // Enviar resumen de productos
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error("Error en la respuesta");
+      }
+
+      const data = await response.json();
+      return data.message;
+    } catch (error) {
+      console.error("Error llamando a IA:", error);
+      // Fallback al procesamiento local
+      return null;
+    }
+  };
+
+  const handleSend = async () => {
+    if (!input.trim() || isLoading) return;
 
     const userMsg = { from: "user", text: input };
     setMessages((prev) => [...prev, userMsg]);
+    const textoUsuario = input;
+    setInput("");
 
-    const respuesta = procesarMensaje(input);
+    // Si está habilitada la IA, intentar usarla
+    if (USE_AI) {
+      setIsLoading(true);
+      const respuestaIA = await llamarIA(textoUsuario);
+      setIsLoading(false);
+
+      if (respuestaIA) {
+        setMessages((prev) => [...prev, { from: "bot", text: respuestaIA }]);
+        return;
+      }
+    }
+
+    // Fallback: procesamiento local
+    const respuesta = procesarMensaje(textoUsuario);
     
     setTimeout(() => {
       if (typeof respuesta === "string") {
@@ -191,8 +248,6 @@ export default function Chatbot() {
         ]);
       }
     }, 500);
-
-    setInput("");
   };
 
   const handleProductClick = (productoId) => {
@@ -377,6 +432,22 @@ export default function Chatbot() {
                 )}
               </div>
             ))}
+            {/* Indicador de carga */}
+            {isLoading && (
+              <div style={{
+                maxWidth: "85%",
+                padding: "10px 14px",
+                borderRadius: 12,
+                background: "#fff",
+                boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
+                display: "flex",
+                alignItems: "center",
+                gap: 8
+              }}>
+                <span style={{ animation: "pulse 1s infinite" }}>🤔</span>
+                <span style={{ color: "#6b7280", fontSize: 14 }}>Pensando...</span>
+              </div>
+            )}
             <div ref={messagesEndRef} />
           </div>
 

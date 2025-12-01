@@ -178,6 +178,37 @@ PINTURA-001,Pintura Látex Blanco,Lavable interior/exterior,Sipa,15990,Pintura,1
 | React Router | Navegación SPA |
 | Leaflet + react-leaflet | Mapas interactivos |
 | xlsx | Lectura de archivos Excel |
+| OpenRouter API | Chatbot con IA (opcional) |
+
+---
+
+## 🤖 Chatbot con IA (OpenRouter)
+
+El chatbot puede funcionar en dos modos:
+1. **Modo local** (por defecto): Búsqueda por palabras clave
+2. **Modo IA**: Usa modelos de lenguaje gratuitos via OpenRouter
+
+### Configurar IA en Vercel
+
+1. Obtén una API key en [OpenRouter](https://openrouter.ai/keys)
+2. En tu proyecto de Vercel, ve a **Settings > Environment Variables**
+3. Agrega las siguientes variables:
+
+| Variable | Valor | Notas |
+|----------|-------|-------|
+| `OPENROUTER_API_KEY` | `sk-or-v1-xxx...` | Tu API key (oculta en servidor) |
+| `VITE_USE_AI_CHAT` | `true` | Habilita el modo IA |
+
+4. Redeploy tu aplicación
+
+### Modelos gratuitos disponibles
+
+El chatbot usa `meta-llama/llama-3.2-3b-instruct:free` por defecto. Puedes cambiar el modelo en `api/chat.js`.
+
+Otros modelos gratuitos:
+- `google/gemma-2-9b-it:free`
+- `mistralai/mistral-7b-instruct:free`
+- `qwen/qwen-2-7b-instruct:free`
 | Nominatim API | Geocodificación de direcciones |
 | localStorage | Persistencia de datos |
 

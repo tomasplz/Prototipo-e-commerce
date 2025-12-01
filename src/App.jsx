@@ -25,12 +25,12 @@ function App() {
 
   // ✅ Cargar productos de ejemplo si no existen o si la versión cambió
   useEffect(() => {
-    const PRODUCTOS_VERSION = "v3"; // Cambiar este número para forzar recarga de productos
+    const PRODUCTOS_VERSION = "v4"; // Cambiar este número para forzar recarga de productos
     const versionActual = localStorage.getItem("productosVersion");
     const existentes = JSON.parse(localStorage.getItem("productos")) || [];
     
     if (existentes.length === 0 || versionActual !== PRODUCTOS_VERSION) {
-      // Imágenes reales de productos (Unsplash/Pexels placeholders)
+      // Imágenes reales de productos (Unsplash placeholders)
       const IMG = {
         martillo: "https://images.unsplash.com/photo-1586864387967-d02ef85d93e8?w=300&h=300&fit=crop",
         taladro: "https://images.unsplash.com/photo-1504148455328-c376907d081c?w=300&h=300&fit=crop",
@@ -54,68 +54,127 @@ function App() {
         linterna: "https://images.unsplash.com/photo-1567596275753-92607c3ce1ae?w=300&h=300&fit=crop",
       };
 
-      // Productos diferenciados - cada tienda tiene su propio catálogo
-      // Algunos productos se comparten para comparar, otros son exclusivos
+      // Tiendas
+      const TIENDAS = {
+        donPepe: { nombre: "Ferretería Don Pepe", id: "ferre-1" },
+        construmart: { nombre: "Construmart Vecino", id: "ferre-2" },
+        sodimac: { nombre: "Sodimac Express", id: "ferre-3" },
+        elMaestro: { nombre: "Ferretería El Maestro", id: "ferre-4" },
+      };
+
       const productosEjemplo = [
-        // =============================================
-        // FERRETERÍA DON PEPE (ferre-1) - Especialista en herramientas manuales
-        // =============================================
-        { id: 101, sku: "MARTILLO-001", nombre: "Martillo Carpintero", descripcion: "Mango de fibra de vidrio, 16oz.", marca: "Stanley", precio: 9990, tipoHerramienta: "Manual", tamaño: "16 oz", cantidad: 30, imagen: IMG.martillo, vendedor: { nombre: "Ferretería Don Pepe", id: "ferre-1" }, vendedorId: "ferre-1" },
-        { id: 102, sku: "ALICATE-001", nombre: "Alicate Universal 8\"", descripcion: "Alicate multiuso acero vanadio.", marca: "Irwin", precio: 8990, tipoHerramienta: "Manual", tamaño: "8 pulgadas", cantidad: 35, imagen: IMG.alicate, vendedor: { nombre: "Ferretería Don Pepe", id: "ferre-1" }, vendedorId: "ferre-1" },
-        { id: 103, sku: "LIJADORA-001", nombre: "Lijadora Orbital", descripcion: "Ideal para acabados finos en madera.", marca: "DeWalt", precio: 54990, tipoHerramienta: "Eléctrica", tamaño: "Pequeña", cantidad: 8, imagen: IMG.lijadora, vendedor: { nombre: "Ferretería Don Pepe", id: "ferre-1" }, vendedorId: "ferre-1" },
-        { id: 104, sku: "BROCHA-001", nombre: "Brocha Profesional 3\"", descripcion: "Cerdas naturales para acabado fino.", marca: "Atlas", precio: 3990, tipoHerramienta: "Pintura", tamaño: "3 pulgadas", cantidad: 50, imagen: IMG.brocha, vendedor: { nombre: "Ferretería Don Pepe", id: "ferre-1" }, vendedorId: "ferre-1" },
-        { id: 105, sku: "LINTERNA-001", nombre: "Linterna LED Recargable", descripcion: "1000 lúmenes con zoom.", marca: "Energizer", precio: 14990, tipoHerramienta: "Iluminación", tamaño: "Mediana", cantidad: 35, imagen: IMG.linterna, vendedor: { nombre: "Ferretería Don Pepe", id: "ferre-1" }, vendedorId: "ferre-1" },
-        // Exclusivos Don Pepe
-        { id: 106, sku: "SERRUCHO-001", nombre: "Serrucho Profesional 22\"", descripcion: "Hoja de acero templado.", marca: "Tramontina", precio: 18990, tipoHerramienta: "Manual", tamaño: "22 pulgadas", cantidad: 15, imagen: IMG.serrucho, vendedor: { nombre: "Ferretería Don Pepe", id: "ferre-1" }, vendedorId: "ferre-1" },
-        { id: 107, sku: "FLEXOMETRO-001", nombre: "Flexómetro 8m Profesional", descripcion: "Cinta métrica autoblocante.", marca: "Stanley", precio: 12990, tipoHerramienta: "Medición", tamaño: "8 metros", cantidad: 40, imagen: IMG.flexometro, vendedor: { nombre: "Ferretería Don Pepe", id: "ferre-1" }, vendedorId: "ferre-1" },
-        { id: 108, sku: "MARTILLO-002", nombre: "Martillo de Bola 24oz", descripcion: "Para trabajos de metal y forja.", marca: "Truper", precio: 14990, tipoHerramienta: "Manual", tamaño: "24 oz", cantidad: 12, imagen: IMG.martillo, vendedor: { nombre: "Ferretería Don Pepe", id: "ferre-1" }, vendedorId: "ferre-1" },
-        // Compartido para comparar
-        { id: 109, sku: "TALADRO-001", nombre: "Taladro Percutor 600W", descripcion: "Taladro potente para concreto y madera.", marca: "Bosch", precio: 89990, tipoHerramienta: "Eléctrica", tamaño: "Estándar", cantidad: 10, imagen: IMG.taladro, vendedor: { nombre: "Ferretería Don Pepe", id: "ferre-1" }, vendedorId: "ferre-1" },
+        // ========================================
+        // PRODUCTOS EN 4 TIENDAS (pocos - alta competencia)
+        // ========================================
+        // Taladro Percutor - en las 4 tiendas
+        { id: 101, sku: "TALADRO-001", nombre: "Taladro Percutor 600W", descripcion: "Taladro potente para concreto y madera.", marca: "Bosch", precio: 89990, tipoHerramienta: "Eléctrica", tamaño: "Estándar", cantidad: 10, imagen: IMG.taladro, vendedor: TIENDAS.donPepe, vendedorId: "ferre-1" },
+        { id: 201, sku: "TALADRO-001", nombre: "Taladro Percutor 600W", descripcion: "Taladro potente para concreto y madera.", marca: "Bosch", precio: 74990, tipoHerramienta: "Eléctrica", tamaño: "Estándar", cantidad: 8, imagen: IMG.taladro, vendedor: TIENDAS.construmart, vendedorId: "ferre-2" },
+        { id: 301, sku: "TALADRO-001", nombre: "Taladro Percutor 600W", descripcion: "Taladro potente para concreto y madera.", marca: "Bosch", precio: 79990, tipoHerramienta: "Eléctrica", tamaño: "Estándar", cantidad: 12, imagen: IMG.taladro, vendedor: TIENDAS.sodimac, vendedorId: "ferre-3" },
+        { id: 401, sku: "TALADRO-001", nombre: "Taladro Percutor 600W", descripcion: "Taladro potente para concreto y madera.", marca: "Bosch", precio: 84990, tipoHerramienta: "Eléctrica", tamaño: "Estándar", cantidad: 5, imagen: IMG.taladro, vendedor: TIENDAS.elMaestro, vendedorId: "ferre-4" },
 
-        // =============================================
-        // CONSTRUMART VECINO (ferre-2) - Especialista en construcción y escaleras
-        // =============================================
-        { id: 201, sku: "TALADRO-001", nombre: "Taladro Percutor 600W", descripcion: "Taladro potente para concreto y madera.", marca: "Bosch", precio: 74990, tipoHerramienta: "Eléctrica", tamaño: "Estándar", cantidad: 8, imagen: IMG.taladro, vendedor: { nombre: "Construmart Vecino", id: "ferre-2" }, vendedorId: "ferre-2" },
-        { id: 202, sku: "ESCALERA-001", nombre: "Escalera Aluminio 6 Peldaños", descripcion: "Escalera plegable resistente.", marca: "Wurth", precio: 69990, tipoHerramienta: "Acceso", tamaño: "6 peldaños", cantidad: 12, imagen: IMG.escalera, vendedor: { nombre: "Construmart Vecino", id: "ferre-2" }, vendedorId: "ferre-2" },
-        { id: 203, sku: "LLAVE-001", nombre: "Llave Inglesa 10\"", descripcion: "Acero cromado de alta resistencia.", marca: "Truper", precio: 11490, tipoHerramienta: "Manual", tamaño: "10 pulgadas", cantidad: 15, imagen: IMG.llave, vendedor: { nombre: "Construmart Vecino", id: "ferre-2" }, vendedorId: "ferre-2" },
-        { id: 204, sku: "CANDADO-001", nombre: "Candado Seguridad 50mm", descripcion: "Candado latón anti-ganzúa.", marca: "Yale", precio: 11990, tipoHerramienta: "Seguridad", tamaño: "50mm", cantidad: 25, imagen: IMG.candado, vendedor: { nombre: "Construmart Vecino", id: "ferre-2" }, vendedorId: "ferre-2" },
-        // Exclusivos Construmart
-        { id: 205, sku: "ESCALERA-002", nombre: "Escalera Telescópica 4m", descripcion: "Escalera extensible compacta.", marca: "Wurth", precio: 129990, tipoHerramienta: "Acceso", tamaño: "4 metros", cantidad: 6, imagen: IMG.escalera, vendedor: { nombre: "Construmart Vecino", id: "ferre-2" }, vendedorId: "ferre-2" },
-        { id: 206, sku: "MEZCLADORA-001", nombre: "Mezcladora de Concreto", descripcion: "Mezcladora eléctrica 140L.", marca: "Bauker", precio: 289990, tipoHerramienta: "Eléctrica", tamaño: "140 litros", cantidad: 3, imagen: IMG.taladro, vendedor: { nombre: "Construmart Vecino", id: "ferre-2" }, vendedorId: "ferre-2" },
-        { id: 207, sku: "CARRETILLA-001", nombre: "Carretilla de Construcción", descripcion: "Carretilla 90L reforzada.", marca: "Imsa", precio: 45990, tipoHerramienta: "Transporte", tamaño: "90 litros", cantidad: 8, imagen: IMG.nivel, vendedor: { nombre: "Construmart Vecino", id: "ferre-2" }, vendedorId: "ferre-2" },
-        { id: 208, sku: "PALA-001", nombre: "Pala Punta Redonda", descripcion: "Pala de acero con mango madera.", marca: "Bellota", precio: 15990, tipoHerramienta: "Manual", tamaño: "Estándar", cantidad: 20, imagen: IMG.nivel, vendedor: { nombre: "Construmart Vecino", id: "ferre-2" }, vendedorId: "ferre-2" },
-        { id: 209, sku: "CEMENTO-001", nombre: "Cemento Polpaico 25kg", descripcion: "Cemento portland gris.", marca: "Polpaico", precio: 6990, tipoHerramienta: "Material", tamaño: "25 kg", cantidad: 100, imagen: IMG.tornillos, vendedor: { nombre: "Construmart Vecino", id: "ferre-2" }, vendedorId: "ferre-2" },
+        // Martillo Carpintero - en las 4 tiendas
+        { id: 102, sku: "MARTILLO-001", nombre: "Martillo Carpintero 16oz", descripcion: "Mango de fibra de vidrio, 16oz.", marca: "Stanley", precio: 12990, tipoHerramienta: "Manual", tamaño: "16 oz", cantidad: 30, imagen: IMG.martillo, vendedor: TIENDAS.donPepe, vendedorId: "ferre-1" },
+        { id: 202, sku: "MARTILLO-001", nombre: "Martillo Carpintero 16oz", descripcion: "Mango de fibra de vidrio, 16oz.", marca: "Stanley", precio: 9990, tipoHerramienta: "Manual", tamaño: "16 oz", cantidad: 25, imagen: IMG.martillo, vendedor: TIENDAS.construmart, vendedorId: "ferre-2" },
+        { id: 302, sku: "MARTILLO-001", nombre: "Martillo Carpintero 16oz", descripcion: "Mango de fibra de vidrio, 16oz.", marca: "Stanley", precio: 11490, tipoHerramienta: "Manual", tamaño: "16 oz", cantidad: 35, imagen: IMG.martillo, vendedor: TIENDAS.sodimac, vendedorId: "ferre-3" },
+        { id: 402, sku: "MARTILLO-001", nombre: "Martillo Carpintero 16oz", descripcion: "Mango de fibra de vidrio, 16oz.", marca: "Stanley", precio: 10990, tipoHerramienta: "Manual", tamaño: "16 oz", cantidad: 20, imagen: IMG.martillo, vendedor: TIENDAS.elMaestro, vendedorId: "ferre-4" },
 
-        // =============================================
-        // SODIMAC EXPRESS (ferre-3) - Especialista en pintura y fijaciones
-        // =============================================
-        { id: 301, sku: "PINTURA-001", nombre: "Pintura Látex Blanco 4L", descripcion: "Pintura lavable interior/exterior.", marca: "Sipa", precio: 18990, tipoHerramienta: "Pintura", tamaño: "4 litros", cantidad: 40, imagen: IMG.pintura, vendedor: { nombre: "Sodimac Express", id: "ferre-3" }, vendedorId: "ferre-3" },
-        { id: 302, sku: "DESTOR-001", nombre: "Juego Destornilladores 10pcs", descripcion: "Set de 10 piezas punta magnética.", marca: "Stanley", precio: 14990, tipoHerramienta: "Manual", tamaño: "Varios", cantidad: 50, imagen: IMG.destornillador, vendedor: { nombre: "Sodimac Express", id: "ferre-3" }, vendedorId: "ferre-3" },
-        { id: 303, sku: "TORNILLOS-001", nombre: "Caja Tornillos Madera 200pcs", descripcion: "Tornillos cabeza Phillips varios tamaños.", marca: "Fix", precio: 6990, tipoHerramienta: "Fijación", tamaño: "Surtido", cantidad: 100, imagen: IMG.tornillos, vendedor: { nombre: "Sodimac Express", id: "ferre-3" }, vendedorId: "ferre-3" },
-        { id: 304, sku: "CASCO-001", nombre: "Casco de Seguridad", descripcion: "Casco certificado con suspensión.", marca: "MSA", precio: 12990, tipoHerramienta: "Seguridad", tamaño: "Universal", cantidad: 30, imagen: IMG.casco, vendedor: { nombre: "Sodimac Express", id: "ferre-3" }, vendedorId: "ferre-3" },
-        { id: 305, sku: "MARTILLO-001", nombre: "Martillo Carpintero", descripcion: "Mango de fibra de vidrio, 16oz.", marca: "Stanley", precio: 12990, tipoHerramienta: "Manual", tamaño: "16 oz", cantidad: 25, imagen: IMG.martillo, vendedor: { nombre: "Sodimac Express", id: "ferre-3" }, vendedorId: "ferre-3" },
-        // Exclusivos Sodimac
-        { id: 306, sku: "PINTURA-002", nombre: "Pintura Esmalte Sintético 1L", descripcion: "Esmalte brillante multiuso.", marca: "Tricolor", precio: 12990, tipoHerramienta: "Pintura", tamaño: "1 litro", cantidad: 60, imagen: IMG.pintura, vendedor: { nombre: "Sodimac Express", id: "ferre-3" }, vendedorId: "ferre-3" },
-        { id: 307, sku: "RODILLO-001", nombre: "Rodillo Antigota 23cm", descripcion: "Rodillo profesional para látex.", marca: "Castor", precio: 8990, tipoHerramienta: "Pintura", tamaño: "23 cm", cantidad: 45, imagen: IMG.brocha, vendedor: { nombre: "Sodimac Express", id: "ferre-3" }, vendedorId: "ferre-3" },
-        { id: 308, sku: "CLAVOS-001", nombre: "Clavos Madera 2\" 1kg", descripcion: "Clavos punta diamante.", marca: "Fix", precio: 3990, tipoHerramienta: "Fijación", tamaño: "2 pulgadas", cantidad: 80, imagen: IMG.clavos, vendedor: { nombre: "Sodimac Express", id: "ferre-3" }, vendedorId: "ferre-3" },
-        { id: 309, sku: "TARUGO-001", nombre: "Tarugos Plásticos 8mm 100pcs", descripcion: "Tarugos para muro.", marca: "Fischer", precio: 4990, tipoHerramienta: "Fijación", tamaño: "8mm", cantidad: 120, imagen: IMG.tornillos, vendedor: { nombre: "Sodimac Express", id: "ferre-3" }, vendedorId: "ferre-3" },
-        { id: 310, sku: "LIJA-001", nombre: "Pack Lijas Surtidas x10", descripcion: "Lijas granos 80 a 220.", marca: "Norton", precio: 5990, tipoHerramienta: "Abrasivo", tamaño: "Surtido", cantidad: 70, imagen: IMG.lijadora, vendedor: { nombre: "Sodimac Express", id: "ferre-3" }, vendedorId: "ferre-3" },
+        // ========================================
+        // PRODUCTOS EN 3 TIENDAS (varios)
+        // ========================================
+        // Destornilladores Set
+        { id: 103, sku: "DESTOR-001", nombre: "Juego Destornilladores 10pcs", descripcion: "Set de 10 piezas punta magnética.", marca: "Stanley", precio: 14990, tipoHerramienta: "Manual", tamaño: "Varios", cantidad: 40, imagen: IMG.destornillador, vendedor: TIENDAS.donPepe, vendedorId: "ferre-1" },
+        { id: 203, sku: "DESTOR-001", nombre: "Juego Destornilladores 10pcs", descripcion: "Set de 10 piezas punta magnética.", marca: "Stanley", precio: 12990, tipoHerramienta: "Manual", tamaño: "Varios", cantidad: 50, imagen: IMG.destornillador, vendedor: TIENDAS.construmart, vendedorId: "ferre-2" },
+        { id: 303, sku: "DESTOR-001", nombre: "Juego Destornilladores 10pcs", descripcion: "Set de 10 piezas punta magnética.", marca: "Stanley", precio: 13490, tipoHerramienta: "Manual", tamaño: "Varios", cantidad: 45, imagen: IMG.destornillador, vendedor: TIENDAS.sodimac, vendedorId: "ferre-3" },
 
-        // =============================================
-        // FERRETERÍA EL MAESTRO (ferre-4) - Especialista en herramientas eléctricas
-        // =============================================
-        { id: 401, sku: "SIERRA-001", nombre: "Sierra Circular 7\"", descripcion: "Cortes precisos en madera y melamina.", marca: "Makita", precio: 109990, tipoHerramienta: "Eléctrica", tamaño: "7 pulgadas", cantidad: 4, imagen: IMG.sierra, vendedor: { nombre: "Ferretería El Maestro", id: "ferre-4" }, vendedorId: "ferre-4" },
-        { id: 402, sku: "CINTA-001", nombre: "Cinta Métrica 5m", descripcion: "Cinta con freno y gancho magnético.", marca: "Stanley", precio: 4990, tipoHerramienta: "Manual", tamaño: "5 metros", cantidad: 60, imagen: IMG.cinta, vendedor: { nombre: "Ferretería El Maestro", id: "ferre-4" }, vendedorId: "ferre-4" },
-        { id: 403, sku: "NIVEL-001", nombre: "Nivel de Burbuja 60cm", descripcion: "Nivel magnético profesional.", marca: "Stanley", precio: 14990, tipoHerramienta: "Medición", tamaño: "60 cm", cantidad: 30, imagen: IMG.nivel, vendedor: { nombre: "Ferretería El Maestro", id: "ferre-4" }, vendedorId: "ferre-4" },
-        { id: 404, sku: "GUANTES-001", nombre: "Guantes de Trabajo Cuero", descripcion: "Guantes reforzados multiuso.", marca: "3M", precio: 6990, tipoHerramienta: "Seguridad", tamaño: "L", cantidad: 70, imagen: IMG.guantes, vendedor: { nombre: "Ferretería El Maestro", id: "ferre-4" }, vendedorId: "ferre-4" },
-        { id: 405, sku: "TALADRO-001", nombre: "Taladro Percutor 600W", descripcion: "Taladro potente para concreto y madera.", marca: "Bosch", precio: 91990, tipoHerramienta: "Eléctrica", tamaño: "Estándar", cantidad: 5, imagen: IMG.taladro, vendedor: { nombre: "Ferretería El Maestro", id: "ferre-4" }, vendedorId: "ferre-4" },
-        // Exclusivos El Maestro
-        { id: 406, sku: "ESMERIL-001", nombre: "Esmeril Angular 4.5\"", descripcion: "Esmeril potente 850W.", marca: "Bosch", precio: 49990, tipoHerramienta: "Eléctrica", tamaño: "4.5 pulgadas", cantidad: 10, imagen: IMG.sierra, vendedor: { nombre: "Ferretería El Maestro", id: "ferre-4" }, vendedorId: "ferre-4" },
-        { id: 407, sku: "ROTOMARTILLO-001", nombre: "Rotomartillo SDS Plus", descripcion: "Para concreto y mampostería.", marca: "Makita", precio: 189990, tipoHerramienta: "Eléctrica", tamaño: "26mm", cantidad: 4, imagen: IMG.taladro, vendedor: { nombre: "Ferretería El Maestro", id: "ferre-4" }, vendedorId: "ferre-4" },
-        { id: 408, sku: "CALADORA-001", nombre: "Sierra Caladora 500W", descripcion: "Cortes curvos en madera y metal.", marca: "Black+Decker", precio: 44990, tipoHerramienta: "Eléctrica", tamaño: "Estándar", cantidad: 8, imagen: IMG.sierra, vendedor: { nombre: "Ferretería El Maestro", id: "ferre-4" }, vendedorId: "ferre-4" },
-        { id: 409, sku: "PISTOLA-001", nombre: "Pistola de Calor 2000W", descripcion: "Para remover pintura y soldadura.", marca: "Steinel", precio: 39990, tipoHerramienta: "Eléctrica", tamaño: "Estándar", cantidad: 6, imagen: IMG.linterna, vendedor: { nombre: "Ferretería El Maestro", id: "ferre-4" }, vendedorId: "ferre-4" },
-        { id: 410, sku: "MULTIMETRO-001", nombre: "Multímetro Digital", descripcion: "Medidor eléctrico profesional.", marca: "Fluke", precio: 34990, tipoHerramienta: "Medición", tamaño: "Compacto", cantidad: 15, imagen: IMG.nivel, vendedor: { nombre: "Ferretería El Maestro", id: "ferre-4" }, vendedorId: "ferre-4" },
+        // Pintura Látex
+        { id: 104, sku: "PINTURA-001", nombre: "Pintura Látex Blanco 4L", descripcion: "Pintura lavable interior/exterior.", marca: "Sipa", precio: 18990, tipoHerramienta: "Pintura", tamaño: "4 litros", cantidad: 35, imagen: IMG.pintura, vendedor: TIENDAS.donPepe, vendedorId: "ferre-1" },
+        { id: 304, sku: "PINTURA-001", nombre: "Pintura Látex Blanco 4L", descripcion: "Pintura lavable interior/exterior.", marca: "Sipa", precio: 15990, tipoHerramienta: "Pintura", tamaño: "4 litros", cantidad: 40, imagen: IMG.pintura, vendedor: TIENDAS.sodimac, vendedorId: "ferre-3" },
+        { id: 404, sku: "PINTURA-001", nombre: "Pintura Látex Blanco 4L", descripcion: "Pintura lavable interior/exterior.", marca: "Sipa", precio: 17490, tipoHerramienta: "Pintura", tamaño: "4 litros", cantidad: 30, imagen: IMG.pintura, vendedor: TIENDAS.elMaestro, vendedorId: "ferre-4" },
+
+        // Cinta Métrica
+        { id: 105, sku: "CINTA-001", nombre: "Cinta Métrica 5m", descripcion: "Cinta con freno y gancho magnético.", marca: "Stanley", precio: 5990, tipoHerramienta: "Medición", tamaño: "5 metros", cantidad: 60, imagen: IMG.cinta, vendedor: TIENDAS.donPepe, vendedorId: "ferre-1" },
+        { id: 205, sku: "CINTA-001", nombre: "Cinta Métrica 5m", descripcion: "Cinta con freno y gancho magnético.", marca: "Stanley", precio: 4990, tipoHerramienta: "Medición", tamaño: "5 metros", cantidad: 55, imagen: IMG.cinta, vendedor: TIENDAS.construmart, vendedorId: "ferre-2" },
+        { id: 405, sku: "CINTA-001", nombre: "Cinta Métrica 5m", descripcion: "Cinta con freno y gancho magnético.", marca: "Stanley", precio: 5490, tipoHerramienta: "Medición", tamaño: "5 metros", cantidad: 50, imagen: IMG.cinta, vendedor: TIENDAS.elMaestro, vendedorId: "ferre-4" },
+
+        // Alicate Universal
+        { id: 106, sku: "ALICATE-001", nombre: "Alicate Universal 8\"", descripcion: "Alicate multiuso acero vanadio.", marca: "Irwin", precio: 8990, tipoHerramienta: "Manual", tamaño: "8 pulgadas", cantidad: 35, imagen: IMG.alicate, vendedor: TIENDAS.donPepe, vendedorId: "ferre-1" },
+        { id: 206, sku: "ALICATE-001", nombre: "Alicate Universal 8\"", descripcion: "Alicate multiuso acero vanadio.", marca: "Irwin", precio: 7990, tipoHerramienta: "Manual", tamaño: "8 pulgadas", cantidad: 30, imagen: IMG.alicate, vendedor: TIENDAS.construmart, vendedorId: "ferre-2" },
+        { id: 306, sku: "ALICATE-001", nombre: "Alicate Universal 8\"", descripcion: "Alicate multiuso acero vanadio.", marca: "Irwin", precio: 9490, tipoHerramienta: "Manual", tamaño: "8 pulgadas", cantidad: 25, imagen: IMG.alicate, vendedor: TIENDAS.sodimac, vendedorId: "ferre-3" },
+
+        // Escalera Aluminio
+        { id: 207, sku: "ESCALERA-001", nombre: "Escalera Aluminio 6 Peldaños", descripcion: "Escalera plegable resistente.", marca: "Wurth", precio: 59990, tipoHerramienta: "Acceso", tamaño: "6 peldaños", cantidad: 12, imagen: IMG.escalera, vendedor: TIENDAS.construmart, vendedorId: "ferre-2" },
+        { id: 307, sku: "ESCALERA-001", nombre: "Escalera Aluminio 6 Peldaños", descripcion: "Escalera plegable resistente.", marca: "Wurth", precio: 69990, tipoHerramienta: "Acceso", tamaño: "6 peldaños", cantidad: 8, imagen: IMG.escalera, vendedor: TIENDAS.sodimac, vendedorId: "ferre-3" },
+        { id: 407, sku: "ESCALERA-001", nombre: "Escalera Aluminio 6 Peldaños", descripcion: "Escalera plegable resistente.", marca: "Wurth", precio: 64990, tipoHerramienta: "Acceso", tamaño: "6 peldaños", cantidad: 10, imagen: IMG.escalera, vendedor: TIENDAS.elMaestro, vendedorId: "ferre-4" },
+
+        // Nivel de Burbuja
+        { id: 108, sku: "NIVEL-001", nombre: "Nivel de Burbuja 60cm", descripcion: "Nivel magnético profesional.", marca: "Stanley", precio: 14990, tipoHerramienta: "Medición", tamaño: "60 cm", cantidad: 25, imagen: IMG.nivel, vendedor: TIENDAS.donPepe, vendedorId: "ferre-1" },
+        { id: 308, sku: "NIVEL-001", nombre: "Nivel de Burbuja 60cm", descripcion: "Nivel magnético profesional.", marca: "Stanley", precio: 12990, tipoHerramienta: "Medición", tamaño: "60 cm", cantidad: 30, imagen: IMG.nivel, vendedor: TIENDAS.sodimac, vendedorId: "ferre-3" },
+        { id: 408, sku: "NIVEL-001", nombre: "Nivel de Burbuja 60cm", descripcion: "Nivel magnético profesional.", marca: "Stanley", precio: 13990, tipoHerramienta: "Medición", tamaño: "60 cm", cantidad: 20, imagen: IMG.nivel, vendedor: TIENDAS.elMaestro, vendedorId: "ferre-4" },
+
+        // Guantes de Trabajo
+        { id: 109, sku: "GUANTES-001", nombre: "Guantes de Trabajo Cuero", descripcion: "Guantes reforzados multiuso.", marca: "3M", precio: 7990, tipoHerramienta: "Seguridad", tamaño: "L", cantidad: 60, imagen: IMG.guantes, vendedor: TIENDAS.donPepe, vendedorId: "ferre-1" },
+        { id: 309, sku: "GUANTES-001", nombre: "Guantes de Trabajo Cuero", descripcion: "Guantes reforzados multiuso.", marca: "3M", precio: 6490, tipoHerramienta: "Seguridad", tamaño: "L", cantidad: 70, imagen: IMG.guantes, vendedor: TIENDAS.sodimac, vendedorId: "ferre-3" },
+        { id: 409, sku: "GUANTES-001", nombre: "Guantes de Trabajo Cuero", descripcion: "Guantes reforzados multiuso.", marca: "3M", precio: 6990, tipoHerramienta: "Seguridad", tamaño: "L", cantidad: 50, imagen: IMG.guantes, vendedor: TIENDAS.elMaestro, vendedorId: "ferre-4" },
+
+        // ========================================
+        // PRODUCTOS EN 2 TIENDAS (mayoría)
+        // ========================================
+        // Sierra Circular
+        { id: 110, sku: "SIERRA-001", nombre: "Sierra Circular 7\"", descripcion: "Cortes precisos en madera y melamina.", marca: "Makita", precio: 109990, tipoHerramienta: "Eléctrica", tamaño: "7 pulgadas", cantidad: 4, imagen: IMG.sierra, vendedor: TIENDAS.donPepe, vendedorId: "ferre-1" },
+        { id: 410, sku: "SIERRA-001", nombre: "Sierra Circular 7\"", descripcion: "Cortes precisos en madera y melamina.", marca: "Makita", precio: 99990, tipoHerramienta: "Eléctrica", tamaño: "7 pulgadas", cantidad: 6, imagen: IMG.sierra, vendedor: TIENDAS.elMaestro, vendedorId: "ferre-4" },
+
+        // Lijadora Orbital
+        { id: 111, sku: "LIJADORA-001", nombre: "Lijadora Orbital", descripcion: "Ideal para acabados finos en madera.", marca: "DeWalt", precio: 54990, tipoHerramienta: "Eléctrica", tamaño: "Pequeña", cantidad: 8, imagen: IMG.lijadora, vendedor: TIENDAS.donPepe, vendedorId: "ferre-1" },
+        { id: 411, sku: "LIJADORA-001", nombre: "Lijadora Orbital", descripcion: "Ideal para acabados finos en madera.", marca: "DeWalt", precio: 49990, tipoHerramienta: "Eléctrica", tamaño: "Pequeña", cantidad: 10, imagen: IMG.lijadora, vendedor: TIENDAS.elMaestro, vendedorId: "ferre-4" },
+
+        // Llave Inglesa
+        { id: 212, sku: "LLAVE-001", nombre: "Llave Inglesa 10\"", descripcion: "Acero cromado de alta resistencia.", marca: "Truper", precio: 11490, tipoHerramienta: "Manual", tamaño: "10 pulgadas", cantidad: 15, imagen: IMG.llave, vendedor: TIENDAS.construmart, vendedorId: "ferre-2" },
+        { id: 312, sku: "LLAVE-001", nombre: "Llave Inglesa 10\"", descripcion: "Acero cromado de alta resistencia.", marca: "Truper", precio: 12990, tipoHerramienta: "Manual", tamaño: "10 pulgadas", cantidad: 20, imagen: IMG.llave, vendedor: TIENDAS.sodimac, vendedorId: "ferre-3" },
+
+        // Candado Seguridad
+        { id: 213, sku: "CANDADO-001", nombre: "Candado Seguridad 50mm", descripcion: "Candado latón anti-ganzúa.", marca: "Yale", precio: 11990, tipoHerramienta: "Seguridad", tamaño: "50mm", cantidad: 25, imagen: IMG.candado, vendedor: TIENDAS.construmart, vendedorId: "ferre-2" },
+        { id: 313, sku: "CANDADO-001", nombre: "Candado Seguridad 50mm", descripcion: "Candado latón anti-ganzúa.", marca: "Yale", precio: 9990, tipoHerramienta: "Seguridad", tamaño: "50mm", cantidad: 30, imagen: IMG.candado, vendedor: TIENDAS.sodimac, vendedorId: "ferre-3" },
+
+        // Tornillos Caja
+        { id: 214, sku: "TORNILLOS-001", nombre: "Caja Tornillos Madera 200pcs", descripcion: "Tornillos cabeza Phillips varios tamaños.", marca: "Fix", precio: 5990, tipoHerramienta: "Fijación", tamaño: "Surtido", cantidad: 80, imagen: IMG.tornillos, vendedor: TIENDAS.construmart, vendedorId: "ferre-2" },
+        { id: 314, sku: "TORNILLOS-001", nombre: "Caja Tornillos Madera 200pcs", descripcion: "Tornillos cabeza Phillips varios tamaños.", marca: "Fix", precio: 6990, tipoHerramienta: "Fijación", tamaño: "Surtido", cantidad: 100, imagen: IMG.tornillos, vendedor: TIENDAS.sodimac, vendedorId: "ferre-3" },
+
+        // Casco Seguridad
+        { id: 315, sku: "CASCO-001", nombre: "Casco de Seguridad", descripcion: "Casco certificado con suspensión.", marca: "MSA", precio: 12990, tipoHerramienta: "Seguridad", tamaño: "Universal", cantidad: 30, imagen: IMG.casco, vendedor: TIENDAS.sodimac, vendedorId: "ferre-3" },
+        { id: 415, sku: "CASCO-001", nombre: "Casco de Seguridad", descripcion: "Casco certificado con suspensión.", marca: "MSA", precio: 14990, tipoHerramienta: "Seguridad", tamaño: "Universal", cantidad: 25, imagen: IMG.casco, vendedor: TIENDAS.elMaestro, vendedorId: "ferre-4" },
+
+        // Brocha Profesional
+        { id: 116, sku: "BROCHA-001", nombre: "Brocha Profesional 3\"", descripcion: "Cerdas naturales para acabado fino.", marca: "Atlas", precio: 3990, tipoHerramienta: "Pintura", tamaño: "3 pulgadas", cantidad: 50, imagen: IMG.brocha, vendedor: TIENDAS.donPepe, vendedorId: "ferre-1" },
+        { id: 316, sku: "BROCHA-001", nombre: "Brocha Profesional 3\"", descripcion: "Cerdas naturales para acabado fino.", marca: "Atlas", precio: 4490, tipoHerramienta: "Pintura", tamaño: "3 pulgadas", cantidad: 45, imagen: IMG.brocha, vendedor: TIENDAS.sodimac, vendedorId: "ferre-3" },
+
+        // Linterna LED
+        { id: 117, sku: "LINTERNA-001", nombre: "Linterna LED Recargable", descripcion: "1000 lúmenes con zoom.", marca: "Energizer", precio: 14990, tipoHerramienta: "Iluminación", tamaño: "Mediana", cantidad: 35, imagen: IMG.linterna, vendedor: TIENDAS.donPepe, vendedorId: "ferre-1" },
+        { id: 217, sku: "LINTERNA-001", nombre: "Linterna LED Recargable", descripcion: "1000 lúmenes con zoom.", marca: "Energizer", precio: 12990, tipoHerramienta: "Iluminación", tamaño: "Mediana", cantidad: 40, imagen: IMG.linterna, vendedor: TIENDAS.construmart, vendedorId: "ferre-2" },
+
+        // Esmeril Angular
+        { id: 318, sku: "ESMERIL-001", nombre: "Esmeril Angular 4.5\"", descripcion: "Esmeril potente 850W.", marca: "Bosch", precio: 45990, tipoHerramienta: "Eléctrica", tamaño: "4.5 pulgadas", cantidad: 12, imagen: IMG.sierra, vendedor: TIENDAS.sodimac, vendedorId: "ferre-3" },
+        { id: 418, sku: "ESMERIL-001", nombre: "Esmeril Angular 4.5\"", descripcion: "Esmeril potente 850W.", marca: "Bosch", precio: 49990, tipoHerramienta: "Eléctrica", tamaño: "4.5 pulgadas", cantidad: 10, imagen: IMG.sierra, vendedor: TIENDAS.elMaestro, vendedorId: "ferre-4" },
+
+        // Flexómetro
+        { id: 119, sku: "FLEXOMETRO-001", nombre: "Flexómetro 8m Profesional", descripcion: "Cinta métrica autoblocante.", marca: "Stanley", precio: 12990, tipoHerramienta: "Medición", tamaño: "8 metros", cantidad: 40, imagen: IMG.flexometro, vendedor: TIENDAS.donPepe, vendedorId: "ferre-1" },
+        { id: 219, sku: "FLEXOMETRO-001", nombre: "Flexómetro 8m Profesional", descripcion: "Cinta métrica autoblocante.", marca: "Stanley", precio: 11490, tipoHerramienta: "Medición", tamaño: "8 metros", cantidad: 35, imagen: IMG.flexometro, vendedor: TIENDAS.construmart, vendedorId: "ferre-2" },
+
+        // ========================================
+        // PRODUCTOS EXCLUSIVOS (1 sola tienda - pocos)
+        // ========================================
+        // Rotomartillo - Solo El Maestro (especialista)
+        { id: 420, sku: "ROTOMARTILLO-001", nombre: "Rotomartillo SDS Plus", descripcion: "Para concreto y mampostería.", marca: "Makita", precio: 189990, tipoHerramienta: "Eléctrica", tamaño: "26mm", cantidad: 4, imagen: IMG.taladro, vendedor: TIENDAS.elMaestro, vendedorId: "ferre-4" },
+
+        // Mezcladora de Concreto - Solo Construmart (construcción)
+        { id: 221, sku: "MEZCLADORA-001", nombre: "Mezcladora de Concreto 140L", descripcion: "Mezcladora eléctrica profesional.", marca: "Bauker", precio: 289990, tipoHerramienta: "Eléctrica", tamaño: "140 litros", cantidad: 3, imagen: IMG.taladro, vendedor: TIENDAS.construmart, vendedorId: "ferre-2" },
+
+        // Multímetro Digital - Solo El Maestro (eléctrico)
+        { id: 422, sku: "MULTIMETRO-001", nombre: "Multímetro Digital", descripcion: "Medidor eléctrico profesional.", marca: "Fluke", precio: 34990, tipoHerramienta: "Medición", tamaño: "Compacto", cantidad: 15, imagen: IMG.nivel, vendedor: TIENDAS.elMaestro, vendedorId: "ferre-4" },
+
+        // Serrucho Profesional - Solo Don Pepe (manual)
+        { id: 123, sku: "SERRUCHO-001", nombre: "Serrucho Profesional 22\"", descripcion: "Hoja de acero templado.", marca: "Tramontina", precio: 18990, tipoHerramienta: "Manual", tamaño: "22 pulgadas", cantidad: 15, imagen: IMG.serrucho, vendedor: TIENDAS.donPepe, vendedorId: "ferre-1" },
       ];
+      
       localStorage.setItem("productos", JSON.stringify(productosEjemplo));
       localStorage.setItem("productosVersion", PRODUCTOS_VERSION);
     }
