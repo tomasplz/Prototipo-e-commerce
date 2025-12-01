@@ -1,143 +1,245 @@
-# 🛒 Prototipo E-commerce con React + Vite
+# 🔧 FerrePlaza - E-commerce para Ferreterías Locales
 
-Este proyecto es un **prototipo de e-commerce** desarrollado con **React** y **Vite**, pensado para gestionar productos, usuarios y ventas a nivel básico.  
-Está diseñado como ejemplo educativo o base para desarrollos más completos.
+**FerrePlaza** es un marketplace de ferreterías locales en La Serena/Coquimbo, Chile. Permite comparar precios entre diferentes ferreterías, ver disponibilidad en tiempo real, y encontrar la tienda más cercana con el producto que necesitas.
+
+> 🎯 **Diferenciador vs AliExpress/Mercado Libre**: Disponibilidad local inmediata, retiro hoy mismo, y mapa interactivo para encontrar ferreterías cercanas.
+
+---
+
+## 🚀 Inicio Rápido
+
+```bash
+# Instalar dependencias
+npm install
+
+# Iniciar servidor de desarrollo
+npm run dev
+```
+
+La aplicación estará disponible en `http://localhost:5173`
+
+---
+
+## 👥 Usuarios de Prueba
+
+### 🏪 Cuentas de Ferreterías (Vendedores)
+
+| Ferretería | Email | Contraseña | Especialidad |
+|------------|-------|------------|--------------|
+| Ferretería Don Pepe | `donpepe@ferreteria.cl` | `donpepe123` | Herramientas manuales |
+| Construmart Vecino | `construmart@ferreteria.cl` | `construmart123` | Materiales construcción |
+| Sodimac Express | `sodimac@ferreteria.cl` | `sodimac123` | Pinturas y fittings |
+| Ferretería El Maestro | `maestro@ferreteria.cl` | `maestro123` | Herramientas eléctricas |
+
+### 🛒 Crear Cuenta de Comprador
+
+1. Ir a **Registro** en el Navbar
+2. Completar: Nombre, Email, Contraseña
+3. Seleccionar rol: **Comprador**
+4. Ingresar dirección (se geocodifica automáticamente)
+5. Click en **Registrarse**
+
+---
+
+## 📍 Sistema de Ubicación
+
+En el **Navbar** hay un toggle de ubicación:
+
+| Modo | Indicador | Descripción |
+|------|-----------|-------------|
+| 📍 La Serena | 🟠 Naranja | Ubicación ficticia en el centro de La Serena (-29.9027, -71.2519) |
+| 📍 Mi ubicación | 🟢 Verde | Tu ubicación real (requiere permiso del navegador) |
+
+> **Tip**: Para demos, usa "La Serena" para que las distancias tengan sentido con las ferreterías de prueba.
+
+---
+
+## ✨ Funcionalidades Principales
+
+### 🗺️ Mapa Interactivo (Botón 🌍)
+- Ver todas las ferreterías en el mapa
+- Ordenadas por distancia a tu ubicación
+- Badge "MÁS CERCANA" en la más próxima
+- Click para ver productos de cada tienda
+
+### 💬 Chatbot Asistente
+- Botón flotante en esquina inferior derecha
+- Búsqueda por categoría: "Busco un taladro"
+- Encuentra el **más barato** o el **más cercano**
+- Botones rápidos para categorías populares
+
+### 🏷️ Comparación de Precios
+- Mismo producto en múltiples ferreterías
+- Badge **"MEJOR PRECIO"** en verde
+- Badge **"RETIRO HOY"** si hay stock
+- Estrellas de valoración (3.5 - 5.0)
+
+### 📦 Gestión de Inventario (Vendedores)
+- Agregar/editar/eliminar productos
+- Subir productos masivamente por Excel
+- Ver estadísticas de la tienda
+
+---
+
+## 📊 Carga de Productos por Excel
+
+### Plantillas Disponibles
+
+El proyecto incluye 4 plantillas Excel listas para usar:
+
+| Archivo | Contenido | Productos |
+|---------|-----------|-----------|
+| `plantilla_herramientas.xlsx` | Herramientas eléctricas y manuales | 10 |
+| `plantilla_materiales.xlsx` | Materiales de construcción | 8 |
+| `plantilla_pinturas.xlsx` | Pinturas y acabados | 7 |
+| `plantilla_vacia.xlsx` | Solo encabezados (para llenar) | 0 |
+
+### Estructura del Archivo Excel
+
+El archivo debe tener las siguientes columnas:
+
+| Columna | Requerido | Ejemplo | Descripción |
+|---------|-----------|---------|-------------|
+| `sku` | ✅ Sí | `MARTILLO-001` | Código único del producto |
+| `nombre` | ✅ Sí | `Martillo Carpintero` | Nombre del producto |
+| `descripcion` | ❌ No | `Mango de fibra...` | Descripción detallada |
+| `marca` | ❌ No | `Stanley` | Marca del producto |
+| `precio` | ✅ Sí | `9990` | Precio en CLP (sin puntos ni $) |
+| `tipoHerramienta` | ❌ No | `Manual` | Categoría: Manual, Eléctrica, Pintura, etc. |
+| `tamaño` | ❌ No | `16 oz` | Tamaño o medida |
+| `cantidad` | ✅ Sí | `30` | Stock disponible |
+| `imagen` | ❌ No | `https://...` | URL de imagen (usa Unsplash si no tienes) |
+
+### Ejemplo de Excel
+
+```
+sku,nombre,descripcion,marca,precio,tipoHerramienta,tamaño,cantidad,imagen
+MARTILLO-001,Martillo Carpintero,Mango fibra de vidrio,Stanley,9990,Manual,16 oz,30,https://images.unsplash.com/photo-1586864387967-d02ef85d93e8?w=400
+TALADRO-001,Taladro Inalámbrico,20V con 2 baterías,DeWalt,89990,Eléctrica,20V,15,https://images.unsplash.com/photo-1504148455328-c376907d081c?w=400
+PINTURA-001,Pintura Látex Blanco,Lavable interior/exterior,Sipa,15990,Pintura,1 galón,40,https://images.unsplash.com/photo-1562259949-e8e7689d7828?w=400
+```
+
+### Pasos para Cargar
+
+1. **Iniciar sesión** como vendedor (ferretería)
+2. Ir a **Inventario** en el Navbar
+3. Click en **📤 Subir Excel**
+4. Seleccionar archivo `.xlsx` o `.xls`
+5. Los productos se agregan automáticamente
+
+> **Nota**: Si el SKU ya existe, el producto se actualiza. Si es nuevo, se crea.
+
+---
+
+## 🏗️ Estructura del Proyecto
+
+```
+📁 src/
+├── 📁 components/
+│   ├── Navbar.jsx          # Navegación + toggle ubicación
+│   ├── CardProducto.jsx    # Tarjeta de producto con badges
+│   ├── Chatbot.jsx         # Asistente flotante
+│   └── MapaSidebar.jsx     # Panel lateral con mapa
+├── 📁 pages/
+│   ├── Home.jsx            # Página principal + búsqueda
+│   ├── Login.jsx           # Inicio de sesión
+│   ├── Registro.jsx        # Registro con geocodificación
+│   ├── Inventario.jsx      # Gestión de productos (vendedor)
+│   ├── TiendaVendedor.jsx  # Productos de una ferretería
+│   ├── ProductoDetalle.jsx # Detalle + mapa + comparación
+│   └── CarritoPage.jsx     # Carrito de compras
+├── 📁 data/
+│   └── ferreterias.js      # Coordenadas de ferreterías
+├── App.jsx                 # Rutas + datos semilla
+└── main.jsx                # Punto de entrada
+```
+
+---
+
+## 💾 Almacenamiento (localStorage)
+
+| Clave | Descripción |
+|-------|-------------|
+| `usuarios` | Lista de todos los usuarios (compradores y vendedores) |
+| `usuarioActual` | Usuario actualmente logueado |
+| `productos` | Todos los productos de todas las ferreterías |
+| `carrito` | Productos en el carrito del usuario |
+| `ubicacionUsuario` | Coordenadas de ubicación actual |
+| `tipoUbicacion` | `"ficticia"` o `"real"` |
 
 ---
 
 ## ⚛️ Stack Tecnológico
 
-- **React 18**: Interfaz de usuario basada en componentes.  
-- **Vite**: Bundler rápido con Hot Module Replacement (HMR).  
-- **CSS Modules / CSS simple**: Estilos por componente.  
-- **localStorage**: Simula base de datos (no se usa backend).  
-- **ESLint**: Reglas básicas para mantener código limpio.
+| Tecnología | Uso |
+|------------|-----|
+| React 18 | Framework UI |
+| Vite | Bundler + HMR |
+| React Router | Navegación SPA |
+| Leaflet + react-leaflet | Mapas interactivos |
+| xlsx | Lectura de archivos Excel |
+| Nominatim API | Geocodificación de direcciones |
+| localStorage | Persistencia de datos |
 
 ---
 
-# 📂 Estructura de carpetas      
+## 🔧 Scripts Disponibles
+
+```bash
+npm run dev      # Servidor de desarrollo (puerto 5173)
+npm run build    # Build de producción
+npm run preview  # Vista previa del build
+npm run lint     # Verificar código con ESLint
 ```
-📁 public/               # Archivos estáticos  
-📁 src/  
-📁 components/           # Componentes reutilizables  
-    Navbar.jsx            # Barra de navegación  
-    CardProduct.jsx       # Tarjeta de producto  
-  📁 pages/               # Páginas principales  
-    Home.jsx              # Página de inicio  
-    Login.jsx             # Iniciar sesión  
-    Registro.jsx          # Registro de usuarios  
-    TiendaVendedor.jsx    # Ver productos de un vendedor  
-    Inventario.jsx        # Gestión de inventario del vendedor  
-    CarritoPage.jsx       # Carrito de compras del cliente  
-  App.jsx                 # Componente principal (rutas)  
-  main.jsx                # Punto de entrada de la app  
-index.html  
-package.json  
-vite.config.js  
-.eslintrc.js  
-
----
-```
-## 🧩 Componentes Principales
-
-### `Navbar.jsx`
-- Barra de navegación principal.  
-- Acceso a Inicio, Tienda, Inventario, Carrito y Login/Registro según usuario.
-
-### `CardProduct.jsx`
-- Tarjeta de producto reutilizable con **nombre, precio, imagen y cantidad**.  
-- Usada en la tienda y la Tienda del Vendedor.
-
-### `Home.jsx`
-- Página de inicio del e-commerce.  
-- Muestra productos destacados o información general.
-
-### `Login.jsx`
-- Inicia sesión como cliente o vendedor.  
-- Guarda información en **localStorage** (`usuarioActual`).
-
-### `Registro.jsx`
-- Registro de nuevos usuarios y vendedores.  
-- Datos guardados en **localStorage**.
-
-### `TiendaVendedor.jsx`
-- Muestra productos de un **vendedor específico**.  
-- Solo lectura: no permite editar/eliminar.
-
-### `Inventario.jsx`
-- Página para **vendedores**:  
-  - Ver productos actuales.  
-  - Agregar nuevos productos (nombre, cantidad, precio).  
-  - Eliminar productos existentes.  
-- Datos guardados en **localStorage** (`productos`) filtrados por `vendedorId`.
-
-### `CarritoPage.jsx`
-- Carrito de compras para clientes:  
-  - Ver productos agregados.  
-  - Ajustar cantidades y calcular total.  
-  - Persistencia con **localStorage**.
-
-### `App.jsx`
-- Contiene las **rutas de la aplicación** y determina qué página mostrar según estado del usuario.
-
-### `main.jsx`
-- Punto de entrada que monta `App` en el DOM de `index.html`.
 
 ---
 
-## 💾 Almacenamiento de datos
+## 📱 Características por Rol
 
-- `localStorage` simula base de datos:  
-  - `usuarioActual`: usuario conectado.  
-  - `productos`: productos de todos los vendedores.  
-  - `carrito`: productos seleccionados por clientes.
+### 👤 Comprador
+- ✅ Ver todos los productos
+- ✅ Buscar y filtrar productos
+- ✅ Comparar precios entre ferreterías
+- ✅ Ver mapa de ferreterías cercanas
+- ✅ Usar chatbot para encontrar productos
+- ✅ Agregar al carrito
+- ✅ Toggle ubicación ficticia/real
 
----
-
-## 🚀 Scripts disponibles
-
-| Script             | Descripción                                         |
-|-------------------|---------------------------------------------------|
-| `npm run dev`      | Inicia servidor de desarrollo con HMR             |
-| `npm run build`    | Genera build optimizada para producción           |
-| `npm run preview`  | Sirve build de producción localmente             |
-| `npm run lint`     | Ejecuta ESLint para revisar errores              |
-
----
-
-## 🎨 Estilos y diseño
-
-- CSS por componente o CSS global.  
-- Diseño **minimalista y responsivo** usando React y CSS.  
-- No se usan frameworks externos de UI.
+### 🏪 Vendedor (Ferretería)
+- ✅ Todo lo del comprador
+- ✅ Gestionar inventario propio
+- ✅ Agregar/editar/eliminar productos
+- ✅ Subir productos por Excel
+- ✅ Ver su tienda como la ven los clientes
 
 ---
 
-## 🔧 Personalización y extensibilidad
+## 🎨 Diseño Visual
 
-- **Agregar TypeScript**: renombrar `.jsx` a `.tsx` y configurar `tsconfig.json`.  
-- **React Compiler**: usar `@vitejs/plugin-react-swc` para optimizar HMR.  
-- **UI avanzada**: integrar Material UI, Chakra UI u otras librerías.  
-- **Migrar a backend real**: reemplazar `localStorage` con Firebase, Supabase o servidor propio.
-
----
-
-## 📚 Recursos útiles
-
-- [React](https://reactjs.org/docs/getting-started.html)  
-- [Vite](https://vitejs.dev/)  
-- [ESLint](https://eslint.org/docs/latest/)  
+- **Colores principales**: Naranja ferretero (#f97316) + Gris oscuro (#1f2937)
+- **Badges**: Verde (mejor precio), Azul (retiro hoy), Amarillo (cercano)
+- **Iconos**: Emojis para accesibilidad universal
+- **Responsive**: Adaptado para desktop y móvil
 
 ---
 
-## 📝 Resumen
+## 🚀 Próximos Pasos (Ideas)
 
-Este prototipo permite:
+- [ ] Backend real con PostgreSQL/MongoDB
+- [ ] Autenticación con JWT
+- [ ] Pagos con Transbank/MercadoPago
+- [ ] Notificaciones push
+- [ ] App móvil con React Native
+- [ ] Sistema de reseñas
+- [ ] Historial de compras
 
-- Gestión de productos para vendedores (`Inventario.jsx`)  
-- Visualización de productos por vendedor (`TiendaVendedor.jsx`)  
-- Carrito de compras para clientes (`CarritoPage.jsx`)  
-- Persistencia de datos mediante `localStorage`  
+---
 
-> Base ideal para proyectos educativos, aprendizaje de **React + Vite** y manejo de estado/rutas.
+## 📝 Licencia
+
+Proyecto educativo/prototipo. Libre para uso y modificación.
+
+---
+
+**Desarrollado con 🧡 para ferreterías locales de Chile**
 

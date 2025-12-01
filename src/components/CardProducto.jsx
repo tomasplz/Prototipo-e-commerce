@@ -2,11 +2,30 @@ import { useContext, useState } from "react";
 import { Link } from "react-router-dom";
 import { CartContext } from "../App";
 
-export default function CardProducto({ producto = {}, onAgregar = null }) {
+// Generar rating fake basado en el nombre del producto (consistente)
+const generarRating = (nombre) => {
+  let hash = 0;
+  for (let i = 0; i < (nombre || "").length; i++) {
+    hash = nombre.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  return 3.5 + (Math.abs(hash) % 15) / 10; // Entre 3.5 y 5.0
+};
+
+const generarNumReviews = (nombre) => {
+  let hash = 0;
+  for (let i = 0; i < (nombre || "").length; i++) {
+    hash = nombre.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  return 12 + (Math.abs(hash) % 88); // Entre 12 y 99 reviews
+};
+
+export default function CardProducto({ producto = {}, onAgregar = null, esMejorPrecio = false }) {
   const [hover, setHover] = useState(false);
   const { addToCart } = useContext(CartContext) || {};
 
   const precioNum = Number(producto.precio) || 0;
+  const rating = generarRating(producto.nombre);
+  const numReviews = generarNumReviews(producto.nombre);
   const vendedorNombre =
     producto.vendedor?.nombre ||
     producto.vendedorNombre ||
@@ -93,17 +112,69 @@ export default function CardProducto({ producto = {}, onAgregar = null }) {
         fontFamily: "Inter, system-ui, sans-serif",
       }}
     >
-      {/* Imagen */}
-      <div style={{ position: "relative", height: 160, background: "#f7f7fb" }}>
-        <img
-          src={
-            producto.imagen ||
-            "https://via.placeholder.com/400x300?text=Producto"
-          }
-          alt={producto.nombre || "Producto"}
-          style={{ width: "100%", height: "100%", objectFit: "cover" }}
-        />
-      </div>
+      {/* Imagen - clickeable para ir al detalle */}
+      <Link to={`/producto/${producto.id}`} style={{ textDecoration: "none" }}>
+        <div style={{ position: "relative", height: 160, background: "#f7f7fb", cursor: "pointer" }}>
+          <img
+            src={
+              producto.imagen ||
+              "https://via.placeholder.com/400x300?text=Producto"
+            }
+            alt={producto.nombre || "Producto"}
+            style={{ width: "100%", height: "100%", objectFit: "cover" }}
+          />
+          
+          {/* Badges superiores */}
+          <div style={{ position: "absolute", top: 8, left: 8, display: "flex", flexDirection: "column", gap: 4 }}>
+            {(esMejorPrecio || producto.tieneVariantes) && (
+              <span style={{
+                background: "linear-gradient(135deg, #f59e0b, #d97706)",
+                color: "#fff",
+                padding: "4px 8px",
+                borderRadius: 6,
+                fontSize: 10,
+                fontWeight: 700,
+                display: "flex",
+                alignItems: "center",
+                gap: 3,
+                boxShadow: "0 2px 8px rgba(245,158,11,0.4)"
+              }}>
+                🏆 MEJOR PRECIO
+              </span>
+            )}
+            <span style={{
+              background: "linear-gradient(135deg, #10b981, #059669)",
+              color: "#fff",
+              padding: "4px 8px",
+              borderRadius: 6,
+              fontSize: 10,
+              fontWeight: 700,
+              display: "flex",
+              alignItems: "center",
+              gap: 3,
+              boxShadow: "0 2px 8px rgba(16,185,129,0.4)"
+            }}>
+              🚚 RETIRO HOY
+            </span>
+          </div>
+
+          <div
+            style={{
+              position: "absolute",
+              bottom: 8,
+              right: 8,
+              background: "rgba(234, 88, 12, 0.95)",
+              color: "#fff",
+              padding: "4px 8px",
+              borderRadius: 6,
+              fontSize: 11,
+              fontWeight: 600,
+            }}
+          >
+            📍 Ver ferreterías
+          </div>
+        </div>
+      </Link>
 
       {/* Información */}
       <div
@@ -115,9 +186,21 @@ export default function CardProducto({ producto = {}, onAgregar = null }) {
           flex: 1,
         }}
       >
-        <h3 style={{ margin: 0, fontSize: 16, color: "#101827" }}>
-          {producto.nombre || "Producto sin nombre"}
-        </h3>
+        <Link to={`/producto/${producto.id}`} style={{ textDecoration: "none" }}>
+          <h3 style={{ margin: 0, fontSize: 16, color: "#101827", cursor: "pointer" }}>
+            {producto.nombre || "Producto sin nombre"}
+          </h3>
+        </Link>
+
+        {/* Estrellas de valoración */}
+        <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 2 }}>
+          <span style={{ color: "#f59e0b", fontSize: 14 }}>
+            {"★".repeat(Math.floor(rating))}{rating % 1 >= 0.5 ? "½" : ""}
+          </span>
+          <span style={{ fontSize: 12, color: "#6b7280" }}>
+            {rating.toFixed(1)} ({numReviews})
+          </span>
+        </div>
 
         {/* Descripción corta */}
         <p style={{ fontSize: 13, color: "#6b7280", margin: 0 }}>
@@ -211,31 +294,39 @@ export default function CardProducto({ producto = {}, onAgregar = null }) {
           }}
         >
           <div>
-            <span style={{ fontSize: 12, color: "#6b7280" }}>Precio</span>
+            <span style={{ fontSize: 12, color: "#6b7280" }}>
+              {producto.tieneVariantes ? "Desde" : "Precio"}
+            </span>
             <strong
               style={{
                 fontSize: 16,
-                color: "#0f172a",
+                color: producto.tieneVariantes ? "#059669" : "#0f172a",
                 display: "block",
               }}
             >
-              ${precioNum.toFixed(2)}
+              ${precioNum.toLocaleString("es-CL")}
             </strong>
+            {producto.tieneVariantes && (
+              <span style={{ fontSize: 11, color: "#6b7280" }}>
+                Comparar en {">"}1 tienda
+              </span>
+            )}
           </div>
 
           <button
             onClick={handleAgregar}
             style={{
-              background: "linear-gradient(90deg,#5b60ff,#8a6bff)",
+              background: "linear-gradient(135deg, #ea580c, #f97316)",
               color: "#fff",
               border: "none",
               padding: "8px 12px",
               borderRadius: 10,
               cursor: "pointer",
               fontWeight: 700,
+              boxShadow: "0 2px 8px rgba(234, 88, 12, 0.3)",
             }}
           >
-            Agregar
+            🛒 Agregar
           </button>
         </div>
       </div>

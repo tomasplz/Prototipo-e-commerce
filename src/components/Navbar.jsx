@@ -1,16 +1,34 @@
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 
+// Ubicación ficticia: Centro de La Serena
+const UBICACION_LA_SERENA = { lat: -29.9027, lng: -71.2519 };
+
 export default function Navbar({ usuario, setUsuario }) {
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
   const [count, setCount] = useState(0);
+  const [ubicacionFicticia, setUbicacionFicticia] = useState(true);
+  const [obteniendoUbicacion, setObteniendoUbicacion] = useState(false);
 
   // Función para actualizar el contador desde localStorage
   const actualizarContador = () => {
     const stored = JSON.parse(localStorage.getItem("carrito")) || [];
     setCount(stored.length);
   };
+
+  // Cargar preferencia de ubicación
+  useEffect(() => {
+    const tipoUbicacion = localStorage.getItem("tipoUbicacion");
+    if (tipoUbicacion === "real") {
+      setUbicacionFicticia(false);
+    } else {
+      // Por defecto usar ubicación ficticia
+      setUbicacionFicticia(true);
+      localStorage.setItem("tipoUbicacion", "ficticia");
+      localStorage.setItem("ubicacionUsuario", JSON.stringify(UBICACION_LA_SERENA));
+    }
+  }, []);
 
   useEffect(() => {
     // Actualizar al montar
@@ -23,6 +41,45 @@ export default function Navbar({ usuario, setUsuario }) {
       window.removeEventListener("carritoActualizado", actualizarContador);
     };
   }, []);
+
+  // Cambiar tipo de ubicación
+  const toggleUbicacion = () => {
+    if (ubicacionFicticia) {
+      // Cambiar a ubicación real
+      setObteniendoUbicacion(true);
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+          (position) => {
+            const realUbicacion = {
+              lat: position.coords.latitude,
+              lng: position.coords.longitude
+            };
+            localStorage.setItem("ubicacionUsuario", JSON.stringify(realUbicacion));
+            localStorage.setItem("tipoUbicacion", "real");
+            setUbicacionFicticia(false);
+            setObteniendoUbicacion(false);
+            // Notificar cambio
+            window.dispatchEvent(new Event("ubicacionCambiada"));
+          },
+          (error) => {
+            alert("No se pudo obtener tu ubicación real. Usando ubicación ficticia.");
+            setObteniendoUbicacion(false);
+          },
+          { enableHighAccuracy: true, timeout: 10000 }
+        );
+      } else {
+        alert("Tu navegador no soporta geolocalización");
+        setObteniendoUbicacion(false);
+      }
+    } else {
+      // Cambiar a ubicación ficticia
+      localStorage.setItem("ubicacionUsuario", JSON.stringify(UBICACION_LA_SERENA));
+      localStorage.setItem("tipoUbicacion", "ficticia");
+      setUbicacionFicticia(true);
+      // Notificar cambio
+      window.dispatchEvent(new Event("ubicacionCambiada"));
+    }
+  };
 
   const role = usuario?.role || usuario?.rol || usuario?.tipo || "";
   const roleLower = String(role).toLowerCase();
@@ -39,6 +96,16 @@ export default function Navbar({ usuario, setUsuario }) {
     if (!ok) return;
 
     try {
+      // Eliminar productos del usuario
+      const productos = JSON.parse(localStorage.getItem("productos")) || [];
+      const productosRestantes = productos.filter(p => {
+        if (p.vendedorId && usuario.id) return p.vendedorId !== usuario.id;
+        if (p.vendedor?.id && usuario.id) return p.vendedor.id !== usuario.id;
+        return true;
+      });
+      localStorage.setItem("productos", JSON.stringify(productosRestantes));
+
+      // Eliminar usuario de la lista
       const usuarios = JSON.parse(localStorage.getItem("usuarios")) || [];
       const filtrados = usuarios.filter(u => {
         if (u.id && usuario.id) return u.id !== usuario.id;
@@ -56,9 +123,13 @@ export default function Navbar({ usuario, setUsuario }) {
   const showDashboard = roleLower && !roleLower.includes("comprador");
 
   return (
-    <header style={{ background: "#1f2937", color: "#fff", padding: "0.6rem 1rem", display: "flex", alignItems: "center", justifyContent: "space-between", boxShadow: "0 2px 6px rgba(0,0,0,0.12)" }}>
+    <header style={{ background: "linear-gradient(135deg, #1f2937 0%, #374151 100%)", color: "#fff", padding: "0.6rem 1rem", display: "flex", alignItems: "center", justifyContent: "space-between", boxShadow: "0 4px 20px rgba(0,0,0,0.15)", borderBottom: "3px solid #f97316" }}>
       <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
-        <Link to="/" style={{ textDecoration: "none", color: "#fff", fontWeight: 800, fontSize: 18 }}>Mi Tienda</Link>
+        <Link to="/" style={{ textDecoration: "none", color: "#fff", fontWeight: 800, fontSize: 18, display: "flex", alignItems: "center", gap: 8 }}>
+          <span style={{ fontSize: 24 }}>🔧</span>
+          <span>FerrePlaza</span>
+          <span style={{ background: "#f97316", fontSize: 10, padding: "2px 6px", borderRadius: 4, marginLeft: 4 }}>La Serena</span>
+        </Link>
         <nav style={{ display: "flex", gap: 12, marginLeft: 8 }}>
           <Link to="/" style={{ color: "#d1d5db", textDecoration: "none", fontSize: 14 }}>Inicio</Link>
           {showDashboard && <Link to="/inventario" style={{ color: "#d1d5db", textDecoration: "none", fontSize: 14 }}>Inventario</Link>}
@@ -66,6 +137,35 @@ export default function Navbar({ usuario, setUsuario }) {
       </div>
 
       <div style={{ display: "flex", alignItems: "center", gap: "1rem", position: "relative" }}>
+        {/* Toggle de ubicación */}
+        <button
+          onClick={toggleUbicacion}
+          disabled={obteniendoUbicacion}
+          title={ubicacionFicticia ? "Usando: Centro La Serena (ficticia)" : "Usando: Tu ubicación real"}
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 6,
+            background: ubicacionFicticia ? "rgba(249, 115, 22, 0.2)" : "rgba(34, 197, 94, 0.2)",
+            border: `1px solid ${ubicacionFicticia ? "#f97316" : "#22c55e"}`,
+            color: "#fff",
+            padding: "4px 10px",
+            borderRadius: 20,
+            cursor: obteniendoUbicacion ? "wait" : "pointer",
+            fontSize: 12,
+            transition: "all 0.2s"
+          }}
+        >
+          <span>{obteniendoUbicacion ? "⏳" : "📍"}</span>
+          <span>{ubicacionFicticia ? "La Serena" : "Mi ubicación"}</span>
+          <span style={{
+            width: 8,
+            height: 8,
+            borderRadius: "50%",
+            background: ubicacionFicticia ? "#f97316" : "#22c55e"
+          }}></span>
+        </button>
+
         {usuario ? (
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
             <div style={{ textAlign: "right", lineHeight: 1 }}>

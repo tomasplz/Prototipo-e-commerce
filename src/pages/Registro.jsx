@@ -6,7 +6,45 @@ export default function Registro() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [rol, setRol] = useState("comprador");
+  const [direccion, setDireccion] = useState("");
+  const [lat, setLat] = useState(null);
+  const [lng, setLng] = useState(null);
+  const [buscandoDireccion, setBuscandoDireccion] = useState(false);
   const navigate = useNavigate();
+
+  // Buscar coordenadas usando Nominatim (OpenStreetMap) - GRATIS
+  const buscarCoordenadas = async () => {
+    if (!direccion.trim()) {
+      alert("Ingresa una dirección primero");
+      return;
+    }
+
+    setBuscandoDireccion(true);
+    try {
+      const query = encodeURIComponent(direccion + ", Chile");
+      const response = await fetch(
+        `https://nominatim.openstreetmap.org/search?format=json&q=${query}&limit=1`,
+        {
+          headers: {
+            "User-Agent": "MiTiendaApp/1.0",
+          },
+        }
+      );
+      const data = await response.json();
+
+      if (data && data.length > 0) {
+        setLat(parseFloat(data[0].lat));
+        setLng(parseFloat(data[0].lon));
+        alert(`✅ Ubicación encontrada: ${data[0].display_name}`);
+      } else {
+        alert("No se encontró la dirección. Intenta ser más específico (ej: Av. Libertador 1234, Santiago)");
+      }
+    } catch (error) {
+      console.error("Error al buscar dirección:", error);
+      alert("Error al buscar la dirección. Intenta de nuevo.");
+    }
+    setBuscandoDireccion(false);
+  };
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -29,6 +67,9 @@ export default function Registro() {
       password,
       rol,
       tipoEmpresa: rol === "vendedor" ? "Venta de Herramientas" : null,
+      direccion: direccion || null,
+      lat: lat,
+      lng: lng,
     };
 
     usuarios.push(usuario);
@@ -120,6 +161,45 @@ export default function Registro() {
             />
           </label>
         )}
+
+        {/* Dirección con geocodificación */}
+        <label style={{ display: "flex", flexDirection: "column", gap: 6, color: "#1e1e1e" }}>
+          Dirección (opcional)
+          <div style={{ display: "flex", gap: 8 }}>
+            <input
+              value={direccion}
+              onChange={(e) => setDireccion(e.target.value)}
+              placeholder="Ej: Av. Libertador 1234, Santiago"
+              style={{
+                padding: 8,
+                borderRadius: 6,
+                border: "1px solid #ccc",
+                flex: 1,
+              }}
+            />
+            <button
+              type="button"
+              onClick={buscarCoordenadas}
+              disabled={buscandoDireccion}
+              style={{
+                padding: "8px 12px",
+                background: buscandoDireccion ? "#9ca3af" : "#10b981",
+                color: "#fff",
+                border: "none",
+                borderRadius: 6,
+                cursor: buscandoDireccion ? "not-allowed" : "pointer",
+                fontWeight: 600,
+              }}
+            >
+              {buscandoDireccion ? "Buscando..." : "📍 Ubicar"}
+            </button>
+          </div>
+          {lat && lng && (
+            <small style={{ color: "#10b981", marginTop: 4 }}>
+              ✅ Coordenadas: {lat.toFixed(4)}, {lng.toFixed(4)}
+            </small>
+          )}
+        </label>
 
         {/* Botones */}
         <div style={{ display: "flex", gap: 8 }}>
