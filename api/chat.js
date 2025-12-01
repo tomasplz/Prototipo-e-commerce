@@ -1,7 +1,7 @@
 // API Route para Vercel - Oculta la API key del frontend
+// Usando ESM porque package.json tiene "type": "module"
 
-// Usar https nativo de Node.js para compatibilidad
-const https = require('https');
+import https from 'https';
 
 function makeRequest(options, postData) {
   return new Promise((resolve, reject) => {
@@ -16,7 +16,7 @@ function makeRequest(options, postData) {
   });
 }
 
-module.exports = async function handler(req, res) {
+export default async function handler(req, res) {
   // Headers CORS
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
