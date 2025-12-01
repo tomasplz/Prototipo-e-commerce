@@ -67,7 +67,8 @@ INSTRUCCIONES:
 
   try {
     const requestBody = JSON.stringify({
-      model: 'meta-llama/llama-3.2-3b-instruct:free',
+      // Modelo gratuito alternativo (Gemma de Google)
+      model: 'google/gemma-2-9b-it:free',
       messages: [
         { role: 'system', content: systemPrompt },
         { role: 'user', content: mensaje }
@@ -92,12 +93,18 @@ INSTRUCCIONES:
 
     const response = await makeRequest(options, requestBody);
     
+    // Manejar rate limit (429)
+    if (response.status === 429) {
+      console.error('Rate limit alcanzado');
+      return res.status(200).json({ 
+        message: '⏳ El asistente está ocupado, intenta de nuevo en unos segundos. Mientras, puedes buscar productos usando la barra de búsqueda.'
+      });
+    }
+    
     if (response.status !== 200) {
       console.error('OpenRouter error:', response.status, response.data);
-      return res.status(500).json({ 
-        error: 'Error al consultar el modelo',
-        status: response.status,
-        message: 'Hubo un problema al conectar con el asistente'
+      return res.status(200).json({ 
+        message: '🔧 Hubo un problema con el asistente. Prueba buscando directamente: martillo, taladro, sierra, etc.'
       });
     }
 
@@ -107,10 +114,8 @@ INSTRUCCIONES:
     return res.status(200).json({ message: assistantMessage });
   } catch (error) {
     console.error('Error:', error.message);
-    return res.status(500).json({ 
-      error: 'Error interno del servidor',
-      details: error.message,
-      message: 'Error al procesar tu consulta'
+    return res.status(200).json({ 
+      message: '🔧 Error temporal. Intenta buscar productos directamente en la barra de búsqueda.'
     });
   }
 }
