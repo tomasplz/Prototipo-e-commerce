@@ -57,34 +57,69 @@ export default async function handler(req, res) {
   // Construir contexto con los productos disponibles (ahora incluye distancias)
   const productosOrdenados = (productos || [])
     .sort((a, b) => (a.distanciaMetros || 999999) - (b.distanciaMetros || 999999))
-    .slice(0, 25);
+    .slice(0, 30);
   
-  const productosResumen = productosOrdenados.map(p => 
-    `- ${p.nombre}: $${p.precio?.toLocaleString?.('es-CL') || p.precio} en ${p.tienda} (${p.distancia})`
-  ).join('\n') || 'No hay productos disponibles';
-
-  // Agrupar por producto para mostrar comparativas
+  // Agrupar por nombre de producto para análisis
   const productosAgrupados = {};
   productosOrdenados.forEach(p => {
-    const key = p.nombre.toLowerCase();
+    const key = p.nombre.toLowerCase().trim();
     if (!productosAgrupados[key]) {
       productosAgrupados[key] = [];
     }
     productosAgrupados[key].push(p);
   });
 
-  const comparativaResumen = Object.entries(productosAgrupados)
-    .filter(([_, ofertas]) => ofertas.length > 1)
-    .map(([nombre, ofertas]) => {
-      const masBarato = ofertas.sort((a,b) => a.precio - b.precio)[0];
-      const masCercano = ofertas.sort((a,b) => (a.distanciaMetros||999999) - (b.distanciaMetros||999999))[0];
-      return `${nombre}: Más barato en ${masBarato.tienda} ($${masBarato.precio}), Más cercano en ${masCercano.tienda} (${masCercano.distancia})`;
-    }).join('\n');
+  // Identificar productos exclusivos (solo en 1 tienda) vs compartidos
+  const productosExclusivos = [];
+  const productosCompartidos = [];
+  
+  Object.entries(productosAgrupados).forEach(([nombre, ofertas]) => {
+    if (ofertas.length === 1) {
+      productosExclusivos.push({
+        nombre: ofertas[0].nombre,
+        tienda: ofertas[0].tienda,
+        precio: ofertas[0].precio,
+        distancia: ofertas[0].distancia
+      });
+    } else {
+      const ordenadosPorPrecio = [...ofertas].sort((a,b) => a.precio - b.precio);
+      const ordenadosPorDistancia = [...ofertas].sort((a,b) => (a.distanciaMetros||999999) - (b.distanciaMetros||999999));
+      productosCompartidos.push({
+        nombre: ofertas[0].nombre,
+        cantidadTiendas: ofertas.length,
+        masBarato: { tienda: ordenadosPorPrecio[0].tienda, precio: ordenadosPorPrecio[0].precio },
+        masCaro: { tienda: ordenadosPorPrecio[ordenadosPorPrecio.length-1].tienda, precio: ordenadosPorPrecio[ordenadosPorPrecio.length-1].precio },
+        masCercano: { tienda: ordenadosPorDistancia[0].tienda, distancia: ordenadosPorDistancia[0].distancia, precio: ordenadosPorDistancia[0].precio }
+      });
+    }
+  });
+
+  // Crear resumen estructurado
+  const resumenExclusivos = productosExclusivos.length > 0
+    ? productosExclusivos.map(p => `- ${p.nombre}: SOLO en ${p.tienda} a $${p.precio} (${p.distancia})`).join('\n')
+    : 'No hay productos exclusivos de una sola tienda';
+
+  const resumenCompartidos = productosCompartidos.map(p => 
+    `- ${p.nombre}: En ${p.cantidadTiendas} tiendas. Más barato: ${p.masBarato.tienda} ($${p.masBarato.precio}). Más cercano: ${p.masCercano.tienda} (${p.masCercano.distancia}, $${p.masCercano.precio})`
+  ).join('\n');
+
+  // Agrupar por tienda para saber qué vende cada una
+  const productosPorTienda = {};
+  productosOrdenados.forEach(p => {
+    if (!productosPorTienda[p.tienda]) {
+      productosPorTienda[p.tienda] = [];
+    }
+    productosPorTienda[p.tienda].push(`${p.nombre} ($${p.precio})`);
+  });
+  
+  const resumenPorTienda = Object.entries(productosPorTienda)
+    .map(([tienda, prods]) => `${tienda}: ${prods.join(', ')}`)
+    .join('\n');
 
   // Extraer lista de tiendas únicas
-  const tiendasUnicas = [...new Set(productosOrdenados.map(p => p.tienda))].join(', ');
+  const tiendasUnicas = [...new Set(productosOrdenados.map(p => p.tienda))];
 
-  // Contar mensajes del historial para saber si ya mencionamos la ubicación
+  // Contar mensajes del historial
   const cantidadMensajes = (historial || []).length;
   const yaMencionoUbicacion = cantidadMensajes > 2;
 
@@ -94,31 +129,33 @@ export default async function handler(req, res) {
         : '- El usuario NO tiene ubicación real. Menciona UNA VEZ que puede activar "Usar mi ubicación".')
     : '- El usuario TIENE ubicación real activada ✓';
 
-  const systemPrompt = `Eres el asistente virtual de MiTienda, una PLATAFORMA/MARKETPLACE (similar a MercadoLibre o AliExpress) que conecta MÚLTIPLES FERRETERÍAS locales en La Serena y Coquimbo, Chile.
+  const systemPrompt = `Eres el asistente de MiTienda, un MARKETPLACE que conecta ${tiendasUnicas.length} ferreterías en La Serena y Coquimbo, Chile: ${tiendasUnicas.join(', ')}.
 
-IMPORTANTE - ENTIENDE ESTO:
-- MiTienda NO es una tienda única, es una PLATAFORMA que agrupa varias ferreterías
-- Las ferreterías asociadas son: ${tiendasUnicas}
-- Cada producto puede estar en DIFERENTES tiendas a DIFERENTES precios
-- Tu trabajo es ayudar al usuario a encontrar el MEJOR PRECIO y la tienda MÁS CERCANA
+⚠️ REGLAS CRÍTICAS - DEBES SEGUIR ESTAS REGLAS:
+1. SOLO menciona productos que aparecen EXACTAMENTE en la lista de abajo
+2. Si no encuentras un producto en la lista, di "No tenemos ese producto en la plataforma"
+3. NUNCA inventes información - si no estás seguro, di "déjame verificar" o "no tengo esa información"
+4. Los PRODUCTOS EXCLUSIVOS son los que dicen "SOLO en [tienda]" - NO hay otros exclusivos
+5. Si te preguntan por exclusivos de una tienda y no hay ninguno listado, di honestamente que no hay
 
-ESTADO DE UBICACIÓN: ${esUbicacionReal ? 'UBICACIÓN REAL ACTIVADA ✓' : 'Ubicación aproximada'}
+UBICACIÓN: ${esUbicacionReal ? 'REAL ✓' : 'Aproximada'}
 
-PRODUCTOS EN LA PLATAFORMA (de diferentes ferreterías):
-${productosResumen}
+═══ PRODUCTOS EXCLUSIVOS (solo en 1 tienda) ═══
+${resumenExclusivos}
 
-COMPARATIVAS DE PRECIOS ENTRE TIENDAS:
-${comparativaResumen || 'Sin comparativas disponibles'}
+═══ PRODUCTOS EN MÚLTIPLES TIENDAS (con comparativa) ═══
+${resumenCompartidos}
+
+═══ CATÁLOGO POR TIENDA ═══
+${resumenPorTienda}
 
 INSTRUCCIONES:
-- Responde en español chileno, amigable y breve (2-3 oraciones)
-- Cuando menciones un producto, SIEMPRE di EN QUÉ TIENDA está y a qué precio
-- Si un producto está en varias tiendas, compara: "En X está a $Y, pero en Z está más barato a $W"
-- Ayuda al usuario a decidir entre el más barato vs el más cercano
+- Responde breve (2-3 oraciones), amigable, en español chileno
+- SIEMPRE menciona tienda + precio cuando hables de un producto
+- Para comparar: "En X está a $Y, en Z está a $W (más barato/cercano)"
 ${instruccionUbicacion}
-- NO repitas lo que ya dijiste
-- Si dicen "si" o responden corto, continúa naturalmente
-- NUNCA digas "nuestra tienda" - di "en la plataforma" o menciona la ferretería específica`;
+- Si te corrigen o dicen que te equivocaste, discúlpate y corrige basándote SOLO en los datos de arriba
+- NUNCA digas "nuestra tienda" - di "en la plataforma" o el nombre de la ferretería`;
 
   // Construir mensajes con historial
   const mensajesIA = [
