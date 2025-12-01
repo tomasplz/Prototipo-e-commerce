@@ -18,6 +18,9 @@ export default function Inventario() {
   
   // Estado para edición
   const [editandoId, setEditandoId] = useState(null);
+  
+  // Flag para evitar guardar durante la carga inicial
+  const [cargaInicial, setCargaInicial] = useState(true);
 
   // === Cargar desde Excel ===
   const handleFileUpload = (e) => {
@@ -56,6 +59,9 @@ export default function Inventario() {
 
       setProductos((prev) => [...nuevosProductos, ...prev]);
       alert(`Se han cargado ${nuevosProductos.length} productos exitosamente.`);
+      
+      // Reset file input para permitir cargar el mismo archivo de nuevo si es necesario
+      e.target.value = '';
     };
     reader.readAsBinaryString(file);
   };
@@ -72,18 +78,23 @@ export default function Inventario() {
     const todos = JSON.parse(localStorage.getItem("productos")) || [];
     const propios = todos.filter((p) => p.vendedorId === usuario.id);
     setProductos(propios);
+    
+    // Marcar que la carga inicial terminó
+    setCargaInicial(false);
   }, [usuario]);
 
   // === Guardar productos al cambiar ===
   useEffect(() => {
-    if (!usuario) return;
+    // No guardar durante la carga inicial para evitar duplicados
+    if (!usuario || cargaInicial) return;
+    
     const todos = JSON.parse(localStorage.getItem("productos")) || [];
     const otros = todos.filter((p) => p.vendedorId !== usuario.id);
     localStorage.setItem("productos", JSON.stringify([...otros, ...productos]));
     
     // Notificar a otros componentes (chatbot, mapa, etc.) que los productos cambiaron
     window.dispatchEvent(new Event('productosActualizados'));
-  }, [productos, usuario]);
+  }, [productos, usuario, cargaInicial]);
 
   // === Manejar imagen subida ===
   const handleImagen = (e) => {
